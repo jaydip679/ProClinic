@@ -1,0 +1,24 @@
+from django.contrib.auth.views import LogoutView
+from django.urls import path
+
+from .views import (
+    PatientLoginView,
+    StaffLoginView,
+    choose_login,
+    create_staff_account,
+    doctor_profile,
+    patient_profile,
+    patient_signup,
+)
+
+
+urlpatterns = [
+    path('choose-login/', choose_login, name='choose_login'),
+    path('login/staff/', StaffLoginView.as_view(), name='staff_login'),
+    path('login/patient/', PatientLoginView.as_view(), name='patient_login'),
+    path('signup/patient/', patient_signup, name='patient_signup'),
+    path('profile/patient/', patient_profile, name='patient_profile'),
+    path('profile/doctor/', doctor_profile, name='doctor_profile'),
+    path('staff/create/', create_staff_account, name='create_staff_account'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+]

@@ -1,0 +1,186 @@
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth.views import LoginView
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Q
+from django.shortcuts import redirect, render
+
+from .forms import (
+    DoctorProfileForm,
+    PatientPasswordChangeForm,
+    PatientProfileForm,
+    PatientSignUpForm,
+    StaffCreationForm,
+)
+from patients.models import Patient
+
+
+STAFF_ROLES = {'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'}
+
+
+def choose_login(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'accounts/choose_login.html')
+
+
+class RoleBasedLoginView(LoginView):
+    redirect_authenticated_user = True
+    allowed_roles = set()
+    portal_label = ''
+
+    def form_valid(self, form):
+        user = form.get_user()
+        if user.role not in self.allowed_roles:
+            form.add_error(
+                None,
+                f"This account is not authorized for the {self.portal_label} portal.",
+            )
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+
+class StaffLoginView(RoleBasedLoginView):
+    template_name = 'accounts/staff_login.html'
+    allowed_roles = STAFF_ROLES
+    portal_label = 'Staff'
+
+
+class PatientLoginView(RoleBasedLoginView):
+    template_name = 'accounts/patient_login.html'
+    allowed_roles = {'PATIENT'}
+    portal_label = 'Patient'
+
+
+def patient_signup(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = PatientSignUpForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                user = form.save(commit=False)
+                user.role = 'PATIENT'
+                user.phone_number = form.cleaned_data.get('phone_number')
+                user.save()
+                Patient.objects.create(
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    date_of_birth=form.cleaned_data['date_of_birth'],
+                    gender=form.cleaned_data['gender'],
+                    blood_group=form.cleaned_data['blood_group'],
+                    contact_number=form.cleaned_data['phone_number'],
+                    email=form.cleaned_data['email'],
+                    address=form.cleaned_data['address'],
+                    allergies=form.cleaned_data.get('allergies', ''),
+                )
+            login(request, user)
+            return redirect('dashboard')
+    else:
+        form = PatientSignUpForm()
+
+    return render(request, 'accounts/patient_signup.html', {'form': form})
+
+
+@login_required
+def create_staff_account(request):
+    if request.user.role != 'ADMIN':
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = StaffCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(
+                request,
+                f"Staff account created for {user.username} ({user.get_role_display()}).",
+            )
+            return redirect('create_staff_account')
+    else:
+        form = StaffCreationForm()
+
+    return render(request, 'accounts/create_staff_account.html', {'form': form})
+
+
+@login_required
+def patient_profile(request):
+    if request.user.role != 'PATIENT':
+        return redirect('dashboard')
+
+    profile = Patient.objects.filter(
+        Q(email=request.user.email)
+        | Q(contact_number=request.user.phone_number)
+        | Q(contact_number=request.user.username)
+    ).first()
+
+    initial_profile_data = {}
+    if not profile:
+        initial_profile_data = {
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'email': request.user.email,
+            'contact_number': request.user.phone_number,
+        }
+
+    if request.method == 'POST' and request.POST.get('form_type') == 'password':
+        profile_form = PatientProfileForm(
+            instance=profile,
+            initial=initial_profile_data,
+        )
+        password_form = PatientPasswordChangeForm(request.user, request.POST)
+        if password_form.is_valid():
+            updated_user = password_form.save()
+            update_session_auth_hash(request, updated_user)
+            messages.success(request, "Password updated successfully.")
+            return redirect('patient_profile')
+    elif request.method == 'POST':
+        profile_form = PatientProfileForm(
+            request.POST,
+            instance=profile,
+            initial=initial_profile_data,
+        )
+        password_form = PatientPasswordChangeForm(request.user)
+        if profile_form.is_valid():
+            with transaction.atomic():
+                saved_profile = profile_form.save()
+                request.user.first_name = saved_profile.first_name
+                request.user.last_name = saved_profile.last_name
+                request.user.email = saved_profile.email
+                request.user.phone_number = saved_profile.contact_number
+                request.user.save(
+                    update_fields=['first_name', 'last_name', 'email', 'phone_number']
+                )
+
+            messages.success(request, "Profile updated successfully.")
+            return redirect('patient_profile')
+    else:
+        profile_form = PatientProfileForm(
+            instance=profile,
+            initial=initial_profile_data,
+        )
+        password_form = PatientPasswordChangeForm(request.user)
+
+    context = {
+        'profile_form': profile_form,
+        'password_form': password_form,
+    }
+    return render(request, 'accounts/patient_profile.html', context)
+
+
+@login_required
+def doctor_profile(request):
+    if request.user.role != 'DOCTOR':
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = DoctorProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('doctor_profile')
+    else:
+        form = DoctorProfileForm(instance=request.user)
+
+    return render(request, 'accounts/doctor_profile.html', {'form': form})
