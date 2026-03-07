@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'patient_list' %}">Patients</a></li>
+            <li class="breadcrumb-item active">{{ patient.first_name }} {{ patient.last_name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-inline-block p-4 mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                        {{ patient.first_name|first }}{{ patient.last_name|first }}
+                    </div>
+                    <h4>{{ patient.first_name }} {{ patient.last_name }}</h4>
+                    <span class="badge bg-danger">{{ patient.blood_group }}</span>
+                    <hr>
+                    <p class="text-start"><strong>DOB:</strong> {{ patient.date_of_birth }}</p>
+                    <p class="text-start"><strong>Contact:</strong> {{ patient.contact_number }}</p>
+                    <p class="text-start"><strong>Address:</strong> {{ patient.address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#appointments">Appointments</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#prescriptions">Prescriptions</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#billing">Billing</button></li>
+                    </ul>
+                </div>
+                <div class="card-body tab-content">
+                    <div class="tab-pane fade show active" id="appointments">
+                        <ul class="list-group list-group-flush">
+                            {% for appt in appointments %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ appt.scheduled_time|date:"M d, Y H:i" }} - Dr. {{ appt.doctor.last_name }}
+                                <span class="badge bg-secondary">{{ appt.status }}</span>
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item text-muted">No appointment history.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="tab-pane fade" id="prescriptions">
+                        {% for rx in prescriptions %}
+                        <div class="border-bottom mb-3 pb-2">
+                            <h6>{{ rx.created_at|date:"M d, Y" }} <small class="text-muted">by Dr. {{ rx.doctor.last_name }}</small></h6>
+                            <p class="small mb-0">{{ rx.notes|truncatechars:100 }}</p>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No prescriptions found.</p>
+                        {% endfor %}
+                    </div>
+                    <div class="tab-pane fade" id="billing">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
