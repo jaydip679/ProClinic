@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Detail{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-3">
+        <a href="{% url 'doctor_appointments' %}" class="btn btn-sm btn-outline-secondary">Back to Appointments</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">Patient Information</div>
+                <div class="card-body">
+                    <h5>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</h5>
+                    <p class="mb-1"><strong>DOB:</strong> {{ appointment.patient.date_of_birth }}</p>
+                    <p class="mb-1"><strong>Blood Group:</strong> {{ appointment.patient.blood_group }}</p>
+                    <p class="mb-1"><strong>Contact:</strong> {{ appointment.patient.contact_number }}</p>
+                    <p class="mb-1"><strong>Email:</strong> {{ appointment.patient.email|default:"-" }}</p>
+                    <p class="mb-1"><strong>Allergies:</strong> {{ appointment.patient.allergies|default:"None reported" }}</p>
+                    <p class="mb-0"><strong>Address:</strong> {{ appointment.patient.address|default:"-" }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">Appointment Summary</div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Date & Time:</strong> {{ appointment.scheduled_time|date:"M d, Y H:i" }}</p>
+                    <p class="mb-1"><strong>Status:</strong> {{ appointment.status }}</p>
+                    <p class="mb-0"><strong>Reason:</strong> {{ appointment.reason|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            {% if prescription %}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">Prescription Already Issued</div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Notes:</strong></p>
+                        <p>{{ prescription.notes|default:"-" }}</p>
+                        <h6 class="mt-3">Medicines</h6>
+                        <ul class="list-group">
+                            {% for item in prescription.items.all %}
+                                <li class="list-group-item">
+                                    <strong>{{ item.medicine_name }}</strong> | {{ item.dosage }} | {{ item.instructions }} | {{ item.duration }}
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">No medicine lines.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% else %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">Add Prescription</div>
+                        <div class="card-body">
+                            {% if prescription_form.non_field_errors %}
+                                <div class="alert alert-danger py-2">{{ prescription_form.non_field_errors }}</div>
+                            {% endif %}
+                            <label class="form-label" for="{{ prescription_form.notes.id_for_label }}">Clinical Notes</label>
+                            {{ prescription_form.notes }}
+                            {% if prescription_form.notes.errors %}
+                                <div class="text-danger small">{{ prescription_form.notes.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header">Medicine Plan</div>
+                        <div class="card-body">
+                            {{ medicine_formset.management_form }}
+                            {% if medicine_formset.non_form_errors %}
+                                <div class="alert alert-danger py-2">{{ medicine_formset.non_form_errors }}</div>
+                            {% endif %}
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine</th>
+                                        <th>Dosage</th>
+                                        <th>Instructions</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="medicine-table-body">
+                                    {% for medicine_form in medicine_formset %}
+                                        <tr>
+                                            <td>{{ medicine_form.medicine_name }}</td>
+                                            <td>{{ medicine_form.dosage }}</td>
+                                            <td>{{ medicine_form.instructions }}</td>
+                                            <td>{{ medicine_form.duration }}</td>
+                                        </tr>
+                                        {% if medicine_form.errors %}
+                                            <tr>
+                                                <td colspan="4" class="text-danger small">{{ medicine_form.errors|striptags }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-medicine-row">
+                                + Add Medicine
+                            </button>
+                            <button type="submit" class="btn btn-primary w-100">
+                                Issue Prescription & Mark Appointment Completed
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<template id="medicine-empty-form-template">
+    <tr>
+        <td>{{ medicine_formset.empty_form.medicine_name }}</td>
+        <td>{{ medicine_formset.empty_form.dosage }}</td>
+        <td>{{ medicine_formset.empty_form.instructions }}</td>
+        <td>{{ medicine_formset.empty_form.duration }}</td>
+    </tr>
+</template>
+
+<script>
+    (function () {
+        var addButton = document.getElementById('add-medicine-row');
+        var tableBody = document.getElementById('medicine-table-body');
+        var template = document.getElementById('medicine-empty-form-template');
+        var totalFormsInput = document.getElementById('id_medicine-TOTAL_FORMS');
+        if (!addButton || !tableBody || !template || !totalFormsInput) {
+            return;
+        }
+
+        addButton.addEventListener('click', function () {
+            var formIndex = parseInt(totalFormsInput.value, 10);
+            var rowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
+            tableBody.insertAdjacentHTML('beforeend', rowHtml);
+            totalFormsInput.value = formIndex + 1;
+        });
+    })();
+</script>
+{% endblock %}

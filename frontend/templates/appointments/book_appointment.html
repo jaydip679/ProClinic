@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Schedule New Appointment</h4>
+        </div>
+        <div class="card-body">
+            {% if is_patient_portal %}
+                {% if patient_profile %}
+                    <div class="alert alert-info py-2">
+                        Booking for: <strong>{{ patient_profile }}</strong>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning py-2">
+                        Your patient profile is missing. Please contact reception before booking.
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.name == 'scheduled_time' %}
+                    <div class="form-text">Appointments are validated for doctor and patient time conflicts.</div>
+                    {% endif %}
+                    {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="d-grid">
+                    {% if is_patient_portal and not patient_profile %}
+                        <button type="button" class="btn btn-secondary" disabled>Confirm Appointment</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-success">Confirm Appointment</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
