@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm mx-auto" style="max-width: 700px;">
+        <div class="card-header bg-indigo text-white" style="background-color: #6610f2;">
+            <h4 class="mb-0 text-white">Submit Research Paper</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label"><strong>{{ field.label }}</strong></label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary">Upload for Approval</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
