@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <form method="post">
+        {% csrf_token %}
+        <div class="card shadow-sm mb-4 border-success">
+            <div class="card-header bg-success text-white"><h4>Generate Invoice</h4></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5">{{ form.patient.label_tag }} {{ form.patient }}</div>
+                    <div class="col-md-5">{{ form.appointment.label_tag }} {{ form.appointment }}</div>
+                    <div class="col-md-2">{{ form.status.label_tag }} {{ form.status }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-light"><h5>Line Items</h5></div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                <table class="table">
+                    <thead><tr><th>Service</th><th>Unit Cost</th><th>Qty</th></tr></thead>
+                    <tbody>
+                        {% for f in formset %}
+                        <tr>
+                            <td>{{ f.service_name }}</td>
+                            <td>{{ f.unit_cost }}</td>
+                            <td>{{ f.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-success w-100">Finalize & Generate Bill</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
