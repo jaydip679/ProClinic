@@ -12,7 +12,7 @@
         Peer-reviewed papers submitted by our clinical team.
       </p>
     </div>
-    {% if user.is_authenticated %}
+    {% if user.role == 'DOCTOR' %}
     <a href="{% url 'submit_paper' %}" class="pc-btn pc-btn--primary">
       <i data-feather="upload"></i> Submit Paper
     </a>
