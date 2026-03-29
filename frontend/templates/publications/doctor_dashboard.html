@@ -15,64 +15,94 @@
     </a>
   </div>
 
-  {% if not papers %}
+  {% if not papers and not drafts %}
   <div class="pc-empty-state">
     <i data-feather="file-text" style="width:3rem;height:3rem;color:var(--pc-text-muted);"></i>
     <p style="margin-top:1rem;color:var(--pc-text-muted);">You haven't submitted any research papers yet.</p>
     <a href="{% url 'submit_paper' %}" class="pc-btn pc-btn--primary" style="margin-top:1rem;">Submit Your First Paper</a>
   </div>
   {% else %}
-  <div style="display:grid;gap:1rem;">
-    {% for paper in papers %}
-    <div class="pc-card" style="padding:1.25rem 1.5rem;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
-        <div style="flex:1;">
 
-          <!-- Status badge -->
-          {% if paper.status == 'APPROVED' %}
-            <span class="pc-badge pc-badge--success">Approved</span>
-          {% elif paper.status == 'PENDING' %}
-            <span class="pc-badge pc-badge--warning">Pending Review</span>
-          {% elif paper.status == 'REJECTED' %}
-            <span class="pc-badge pc-badge--danger">Rejected</span>
-          {% else %}
-            <span class="pc-badge">Draft</span>
-          {% endif %}
-
-          <h2 style="font-size:1rem;font-weight:700;margin:.4rem 0 .25rem;">{{ paper.title }}</h2>
-          <p style="font-size:.8rem;color:var(--pc-text-muted);">{{ paper.authors }}</p>
-
-          {% if paper.status == 'REJECTED' and paper.rejection_reason %}
-          <div style="margin-top:.75rem;padding:.6rem .9rem;background:rgba(239,68,68,.07);border-left:3px solid #ef4444;border-radius:4px;">
-            <p style="font-size:.8rem;color:#dc2626;"><strong>Rejection reason:</strong> {{ paper.rejection_reason }}</p>
+    {% if drafts %}
+    <div style="margin-bottom: 2rem;">
+      <h2 class="pc-h2" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">My Drafts</h2>
+      <div style="display:grid;gap:1rem;">
+        {% for draft in drafts %}
+        <div class="pc-card" style="padding:1.25rem 1.5rem; background:#f8fafc; border: 1px dashed #cbd5e1;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+            <div style="flex:1;">
+              <span class="pc-badge">Draft</span>
+              <h2 style="font-size:1rem;font-weight:700;margin:.4rem 0 .25rem;">{{ draft.title|default:"Untitled Draft" }}</h2>
+              <p style="font-size:.8rem;color:var(--pc-text-muted);">{{ draft.authors|default:"No authors listed" }}</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
+              <span style="font-size:.75rem;color:var(--pc-text-muted);">Saved {{ draft.created_at|date:"d M Y" }}</span>
+              <a href="{% url 'submit_paper' %}?draft={{ draft.pk }}" class="pc-btn pc-btn--primary pc-btn--sm">
+                <i data-feather="edit-2"></i> Edit / Submit
+              </a>
+            </div>
           </div>
-          {% endif %}
-
-          {% if paper.status == 'APPROVED' %}
-          <p style="font-size:.8rem;color:var(--pc-text-muted);margin-top:.5rem;">
-            Approved on {{ paper.approved_at|date:"d M Y" }}
-            {% if paper.approved_by %} by {{ paper.approved_by.get_full_name|default:paper.approved_by.username }}{% endif %}
-          </p>
-          {% endif %}
-
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
-          <span style="font-size:.75rem;color:var(--pc-text-muted);">{{ paper.created_at|date:"d M Y" }}</span>
-          {% if paper.status == 'APPROVED' %}
-          <a href="{% url 'publications_public_detail' paper.pk %}" class="pc-btn pc-btn--ghost pc-btn--sm">
-            <i data-feather="eye"></i> View
-          </a>
-          {% endif %}
-          {% if paper.pdf_file %}
-          <a href="{{ paper.pdf_file.url }}" target="_blank" class="pc-btn pc-btn--ghost pc-btn--sm">
-            <i data-feather="file-text"></i> PDF
-          </a>
-          {% endif %}
-        </div>
+        {% endfor %}
       </div>
     </div>
-    {% endfor %}
-  </div>
+    {% endif %}
+
+    {% if papers %}
+    <h2 class="pc-h2" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Submitted Papers</h2>
+    <div style="display:grid;gap:1rem;">
+      {% for paper in papers %}
+      <div class="pc-card" style="padding:1.25rem 1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;">
+
+            <!-- Status badge -->
+            {% if paper.status == 'APPROVED' %}
+              <span class="pc-badge pc-badge--success">Approved</span>
+            {% elif paper.status == 'PENDING' %}
+              <span class="pc-badge pc-badge--warning">Pending Review</span>
+            {% elif paper.status == 'REJECTED' %}
+              <span class="pc-badge pc-badge--danger">Rejected</span>
+            {% else %}
+              <span class="pc-badge">Draft</span>
+            {% endif %}
+
+            <h2 style="font-size:1rem;font-weight:700;margin:.4rem 0 .25rem;">{{ paper.title }}</h2>
+            <p style="font-size:.8rem;color:var(--pc-text-muted);">{{ paper.authors }}</p>
+
+            {% if paper.status == 'REJECTED' and paper.rejection_reason %}
+            <div style="margin-top:.75rem;padding:.6rem .9rem;background:rgba(239,68,68,.07);border-left:3px solid #ef4444;border-radius:4px;">
+              <p style="font-size:.8rem;color:#dc2626;"><strong>Rejection reason:</strong> {{ paper.rejection_reason }}</p>
+            </div>
+            {% endif %}
+
+            {% if paper.status == 'APPROVED' %}
+            <p style="font-size:.8rem;color:var(--pc-text-muted);margin-top:.5rem;">
+              Approved on {{ paper.approved_at|date:"d M Y" }}
+              {% if paper.approved_by %} by {{ paper.approved_by.get_full_name|default:paper.approved_by.username }}{% endif %}
+            </p>
+            {% endif %}
+
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
+            <span style="font-size:.75rem;color:var(--pc-text-muted);">{{ paper.created_at|date:"d M Y" }}</span>
+            {% if paper.status == 'APPROVED' %}
+            <a href="{% url 'publications_public_detail' paper.pk %}" class="pc-btn pc-btn--ghost pc-btn--sm">
+              <i data-feather="eye"></i> View
+            </a>
+            {% endif %}
+            {% if paper.pdf_file %}
+            <a href="{{ paper.pdf_file.url }}" target="_blank" class="pc-btn pc-btn--ghost pc-btn--sm">
+              <i data-feather="file-text"></i> PDF
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
   {% endif %}
 
 </section>

@@ -35,7 +35,7 @@
             <h3 style="font-size:1rem;font-weight:700;margin-bottom:.25rem;">{{ paper.title }}</h3>
             <p style="font-size:.8rem;color:var(--pc-text-muted);margin-bottom:.3rem;">
               By {{ paper.authors }} &nbsp;·&nbsp;
-              Submitted by Dr. {{ paper.doctor.get_full_name|default:paper.doctor.username }} &nbsp;·&nbsp;
+              Submitted by Dr. {% if paper.doctor %}{% if paper.doctor.get_full_name %}{{ paper.doctor.get_full_name }}{% else %}{{ paper.doctor.username }}{% endif %}{% else %}System{% endif %} &nbsp;·&nbsp;
               {{ paper.created_at|date:"d M Y" }}
             </p>
             <p style="font-size:.875rem;color:var(--pc-text);line-height:1.6;">{{ paper.abstract|truncatewords:30 }}</p>
@@ -106,8 +106,8 @@
           {% for paper in approved %}
           <tr>
             <td style="font-weight:600;">{{ paper.title }}</td>
-            <td>{{ paper.doctor.get_full_name|default:paper.doctor.username }}</td>
-            <td>{{ paper.approved_by.get_full_name|default:paper.approved_by.username|default:"—" }}</td>
+            <td>{% if paper.doctor %}{% if paper.doctor.get_full_name %}{{ paper.doctor.get_full_name }}{% else %}{{ paper.doctor.username }}{% endif %}{% else %}System{% endif %}</td>
+            <td>{% if paper.approved_by %}{% if paper.approved_by.get_full_name %}{{ paper.approved_by.get_full_name }}{% else %}{{ paper.approved_by.username }}{% endif %}{% else %}—{% endif %}</td>
             <td>{{ paper.approved_at|date:"d M Y" }}</td>
             <td>
               <a href="{% url 'publications_public_detail' paper.pk %}" class="pc-btn pc-btn--ghost pc-btn--sm">
@@ -140,7 +140,7 @@
           {% for paper in rejected %}
           <tr>
             <td style="font-weight:600;">{{ paper.title }}</td>
-            <td>{{ paper.doctor.get_full_name|default:paper.doctor.username }}</td>
+            <td>{% if paper.doctor %}{% if paper.doctor.get_full_name %}{{ paper.doctor.get_full_name }}{% else %}{{ paper.doctor.username }}{% endif %}{% else %}System{% endif %}</td>
             <td>{{ paper.updated_at|date:"d M Y" }}</td>
             <td style="color:var(--pc-text-muted);font-size:.85rem;">
               {{ paper.rejection_reason|default:"No reason provided" }}
