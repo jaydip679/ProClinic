@@ -10,71 +10,27 @@
                 <span>Dashboard</span>
             </a>
         </li>
-        {% if user.role == 'ADMIN' or user.role == 'RECEPTIONIST' %}
-            <li>
-                <a href="{% url 'patient_list' %}" class="{% if 'patient' in request.path and 'profile' not in request.path %}is-active{% endif %}">
-                    <i data-feather="users"></i>
-                    <span>Patients</span>
-                </a>
-            </li>
-        {% endif %}
-        {% if user.role == 'DOCTOR' %}
-            <li>
-                <a href="{% url 'doctor_appointments' %}" class="{% if 'appointments' in request.path %}is-active{% endif %}">
-                    <i data-feather="calendar"></i>
-                    <span>Appointments</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'doctor_unavailability' %}" class="{% if 'unavailability' in request.path %}is-active{% endif %}">
-                    <i data-feather="clock"></i>
-                    <span>Availability</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'doctor_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
-                    <i data-feather="user"></i>
-                    <span>My Profile</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'submit_paper' %}" class="{% if 'paper' in request.path %}is-active{% endif %}">
-                    <i data-feather="file-text"></i>
-                    <span>Research</span>
-                </a>
-            </li>
-        {% endif %}
-        {% if user.role == 'ADMIN' or user.role == 'RECEPTIONIST' or user.role == 'PATIENT' %}
-            <li>
-                <a href="{% url 'book_appointment' %}" class="{% if 'book' in request.path %}is-active{% endif %}">
-                    <i data-feather="calendar"></i>
-                    <span>Book Appointment</span>
-                </a>
-            </li>
-        {% endif %}
-        {% if user.role == 'PATIENT' %}
-            <li>
-                <a href="{% url 'patient_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
-                    <i data-feather="user"></i>
-                    <span>My Profile</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'patient_invoices' %}" class="{% if 'invoices' in request.path %}is-active{% endif %}">
-                    <i data-feather="file-text"></i>
-                    <span>My Bills</span>
-                </a>
-            </li>
-        {% endif %}
-        {% if user.role == 'ACCOUNTANT' or user.role == 'ADMIN' %}
-            <li>
-                <a href="{% url 'generate_invoice' %}" class="{% if 'invoice' in request.path %}is-active{% endif %}">
-                    <i data-feather="credit-card"></i>
-                    <span>Billing</span>
-                </a>
-            </li>
-        {% endif %}
+
+        {# ── ADMIN ─────────────────────────────────────── #}
         {% if user.role == 'ADMIN' %}
+            <li>
+                <a href="{% url 'patient_list' %}" class="{% if 'patients' in request.path and 'profile' not in request.path and 'my' not in request.path %}is-active{% endif %}">
+                    <i data-feather="users"></i>
+                    <span>Directory</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'receptionist_appointments' %}" class="{% if 'manage' in request.path and 'appointments' in request.path %}is-active{% endif %}">
+                    <i data-feather="list"></i>
+                    <span>All Appointments</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'admin_approval_panel' %}" class="{% if 'review' in request.path or 'approval' in request.path %}is-active{% endif %}">
+                    <i data-feather="book-open"></i>
+                    <span>Review Publications</span>
+                </a>
+            </li>
             <li>
                 <a href="{% url 'create_staff_account' %}" class="{% if 'staff' in request.path %}is-active{% endif %}">
                     <i data-feather="shield"></i>
@@ -87,7 +43,180 @@
                     <span>Audit Logs</span>
                 </a>
             </li>
+            <li>
+                <a href="{% url 'medicine_list' %}" class="{% if 'medicines' in request.path %}is-active{% endif %}">
+                    <i data-feather="package"></i>
+                    <span>Medicine Catalog</span>
+                </a>
+            </li>
         {% endif %}
+
+        {# ── RECEPTIONIST ──────────────────────────────── #}
+        {% if user.role == 'RECEPTIONIST' %}
+            <li>
+                <a href="{% url 'patient_list' %}" class="{% if 'patients' in request.path and 'my' not in request.path %}is-active{% endif %}">
+                    <i data-feather="users"></i>
+                    <span>Patients</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'receptionist_appointments' %}" class="{% if 'manage' in request.path %}is-active{% endif %}">
+                    <i data-feather="list"></i>
+                    <span>Appointments</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'book_appointment' %}" class="{% if 'book' in request.path %}is-active{% endif %}">
+                    <i data-feather="calendar"></i>
+                    <span>Book Appointment</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'generate_invoice' %}" class="{% if 'new' in request.path and 'billing' in request.path %}is-active{% endif %}">
+                    <i data-feather="file-plus"></i>
+                    <span>Generate Invoice</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'invoice_list' %}" class="{% if 'manage' in request.path and 'billing' in request.path %}is-active{% endif %}">
+                    <i data-feather="credit-card"></i>
+                    <span>Invoices</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {# ── DOCTOR ────────────────────────────────────── #}
+        {% if user.role == 'DOCTOR' %}
+            <li>
+                <a href="{% url 'doctor_appointments' %}" class="{% if 'appointments' in request.path and 'manage' not in request.path %}is-active{% endif %}">
+                    <i data-feather="calendar"></i>
+                    <span>Appointments</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'create_prescription' %}" class="{% if 'prescriptions' in request.path and 'dispense' not in request.path %}is-active{% endif %}">
+                    <i data-feather="edit-3"></i>
+                    <span>New Prescription</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'doctor_unavailability' %}" class="{% if 'unavailability' in request.path %}is-active{% endif %}">
+                    <i data-feather="clock"></i>
+                    <span>Availability</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'submit_paper' %}" class="{% if 'publications' in request.path and 'review' not in request.path and 'my-papers' not in request.path %}is-active{% endif %}">
+                    <i data-feather="file-text"></i>
+                    <span>Submit Paper</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'doctor_my_papers' %}" class="{% if 'my-papers' in request.path %}is-active{% endif %}">
+                    <i data-feather="book-open"></i>
+                    <span>My Papers</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {# ── PHARMACIST ────────────────────────────────── #}
+        {% if user.role == 'PHARMACIST' %}
+            <li>
+                {# Active when: on dispense path with status=PENDING, or no status param (default view) #}
+                <a href="{% url 'pharmacist_prescriptions' %}?status=PENDING"
+                   class="{% if 'dispense' in request.path %}{% if request.GET.status == 'PENDING' or not request.GET.status %}is-active{% endif %}{% endif %}">
+                    <i data-feather="package"></i>
+                    <span>Dispense Queue</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'pharmacist_prescriptions' %}?status=DISPENSED"
+                   class="{% if 'dispense' in request.path and request.GET.status == 'DISPENSED' %}is-active{% endif %}">
+                    <i data-feather="check-circle"></i>
+                    <span>Dispensed</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'pharmacist_prescriptions' %}?status=all"
+                   class="{% if 'dispense' in request.path and request.GET.status == 'all' %}is-active{% endif %}">
+                    <i data-feather="list"></i>
+                    <span>All Prescriptions</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {# ── ACCOUNTANT ────────────────────────────────── #}
+        {% if user.role == 'ACCOUNTANT' %}
+            <li>
+                <a href="{% url 'invoice_list' %}" class="{% if 'manage' in request.path %}is-active{% endif %}">
+                    <i data-feather="credit-card"></i>
+                    <span>All Invoices</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'generate_invoice' %}" class="{% if 'new' in request.path %}is-active{% endif %}">
+                    <i data-feather="file-plus"></i>
+                    <span>Generate Invoice</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'medicine_list' %}" class="{% if 'medicines' in request.path %}is-active{% endif %}">
+                    <i data-feather="package"></i>
+                    <span>Medicine Catalog</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {# ── ALL STAFF PROFILE ───────────────────────────────────── #}
+        {% if user.role != 'PATIENT' %}
+            <li>
+                <a href="{% url 'staff_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
+                    <i data-feather="user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {# ── PATIENT ───────────────────────────────────── #}
+        {% if user.role == 'PATIENT' %}
+            <li>
+                <a href="{% url 'book_appointment' %}" class="{% if 'book' in request.path %}is-active{% endif %}">
+                    <i data-feather="calendar"></i>
+                    <span>Book Appointment</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_my_prescriptions' %}" class="{% if 'prescriptions' in request.path %}is-active{% endif %}">
+                    <i data-feather="file-text"></i>
+                    <span>My Prescriptions</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_my_visits' %}" class="{% if 'visits' in request.path %}is-active{% endif %}">
+                    <i data-feather="activity"></i>
+                    <span>My Visits</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_lab_reports' %}" class="{% if 'lab-reports' in request.path %}is-active{% endif %}">
+                    <i data-feather="clipboard"></i>
+                    <span>Lab Reports</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_invoices' %}" class="{% if 'my-invoices' in request.path %}is-active{% endif %}">
+                    <i data-feather="dollar-sign"></i>
+                    <span>My Bills</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
+                    <i data-feather="user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+        {% endif %}
+
     </ul>
     
     <div style="margin-top: auto; padding-top: var(--pc-space-5);">

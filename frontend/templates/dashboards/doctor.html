@@ -49,10 +49,12 @@
                             <td style="font-weight: 600; color: #24323b; padding: 18px 24px;">{{ appt.patient }}</td>
                             <td style="padding: 18px 14px;">{{ appt.scheduled_time|date:"M d, H:i" }}</td>
                             <td style="padding: 18px 14px;">
-                                {% if appt.status == 'Confirmed' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Confirmed</span>
-                                {% elif appt.status == 'Pending' %}<span class="pc-chip pc-chip--pending" style="padding: 6px 12px;">Pending</span>
-                                {% elif appt.status == 'Cancelled' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Cancelled</span>
-                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.status }}</span>{% endif %}
+                                {% if appt.status == 'SCHEDULED' %}<span class="pc-chip" style="padding: 6px 12px; background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef0;">Scheduled</span>
+                                {% elif appt.status == 'RESCHEDULED' %}<span class="pc-chip" style="padding: 6px 12px; background: #f0f4fc; color: #5b8af5; border: 1px solid #c2d2f5;">Rescheduled</span>
+                                {% elif appt.status == 'COMPLETED' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Completed</span>
+                                {% elif appt.status == 'CANCELLED' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Cancelled</span>
+                                {% elif appt.status == 'NOSHOW' %}<span class="pc-chip" style="padding: 6px 12px; background: #f5f0fc; color: #7b5ea7; border: 1px solid #d9cdf0;">No Show</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.get_status_display }}</span>{% endif %}
                             </td>
                             <td style="color: #596578; padding: 18px 14px;">{{ appt.reason|default:"-" }}</td>
                             <td style="padding: 18px 14px;"><a href="{% url 'doctor_appointment_detail' appt.id %}" class="pc-btn pc-btn--primary" style="padding: 6px 14px; min-height: 32px; font-size: 12px; border-radius: 6px;">Open</a></td>
@@ -78,8 +80,14 @@
             </div>
             <div class="pc-card-body" style="display: flex; flex-direction: column; gap: 12px; padding: 24px;">
                 <p style="color: #596578; margin: 0 0 12px 0; font-size: 14px; line-height: 1.5;">Quick access to your core operational workflows.</p>
-                <a href="{% url 'submit_paper' %}" class="pc-btn pc-btn--primary" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px;">
+                <a href="{% url 'create_prescription' %}" class="pc-btn pc-btn--primary" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0ca789, #1fa574); box-shadow: 0 4px 14px rgba(12,167,137,0.3);">
+                    <i data-feather="edit-3" style="width: 16px; height: 16px;"></i> New Prescription
+                </a>
+                <a href="{% url 'submit_paper' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px;">
                     <i data-feather="file-text" style="width: 16px; height: 16px;"></i> Submit Publication
+                </a>
+                <a href="{% url 'doctor_my_papers' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px; border-color: #d1dde8;">
+                    <i data-feather="book-open" style="width: 16px; height: 16px;"></i> My Research Papers
                 </a>
                 <a href="{% url 'doctor_appointments' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px; border-color: #d1dde8;">
                     <i data-feather="calendar" style="width: 16px; height: 16px;"></i> Manage Schedule

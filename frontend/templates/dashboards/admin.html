@@ -1,51 +1,47 @@
-<div class="pc-grid mb-4">
+<div class="pc-grid" style="gap: var(--pc-space-5); margin-bottom: var(--pc-space-6);">
     <!-- Stat Cards -->
-    <div class="pc-col-3 pc-card pc-stat-primary">
+    <div class="pc-col-3 pc-card pc-stat-primary" style="box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Total Patients</h6>
-            <div class="pc-stat-value">{{ total_patients }}</div>
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Total Patients</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ total_patients }}</div>
         </div>
     </div>
-    <div class="pc-col-3 pc-card pc-stat-secondary">
+    <div class="pc-col-3 pc-card pc-stat-secondary" style="box-shadow: 0 10px 30px rgba(44, 62, 145, 0.15); border: none; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Total Staff</h6>
-            <div class="pc-stat-value">{{ total_staff }}</div>
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Total Staff</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ total_staff }}</div>
         </div>
     </div>
-    <div class="pc-col-3 pc-card pc-stat-warning" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white;">
+    <div class="pc-col-3 pc-card pc-stat-warning" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white; box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Today's Appointments</h6>
-            <div class="pc-stat-value">{{ today_appointments }}</div>
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Today's Appts</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ today_appointments }}</div>
         </div>
     </div>
-    <div class="pc-col-3 pc-card pc-stat-warning">
+    <div class="pc-col-3 pc-card pc-stat-warning" style="box-shadow: 0 10px 30px rgba(255, 209, 102, 0.15); border: none; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Pending Research</h6>
-            <div class="pc-stat-value">{{ pending_papers }}</div>
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Pending Research</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ pending_papers }}</div>
         </div>
     </div>
 </div>
 
-<div class="pc-grid">
+<div class="pc-grid" style="gap: var(--pc-space-6);">
     <!-- Metrics -->
     <div class="pc-col-6">
-        <div class="pc-card" style="height: 100%;">
-            <div class="pc-card-head">
-                <strong style="color: #37485a;">System Metrics</strong>
-                <i data-feather="activity" style="color: #98a1b3; width: 18px; height: 18px;"></i>
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; height: 100%;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">System Metrics</strong>
+                <i data-feather="activity" style="color: #0ca789; width: 18px; height: 18px;"></i>
             </div>
-            <div class="pc-card-body" style="display: grid; gap: 12px;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #ebf0f6; padding-bottom: 8px;">
-                    <span style="color: #596578;">Daily Logins</span>
-                    <strong style="color: #24323b;">{{ daily_logins }}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #ebf0f6; padding-bottom: 8px;">
-                    <span style="color: #596578;">Support Queue</span>
-                    <strong style="color: #24323b;">{{ support_queue }}</strong>
+            <div class="pc-card-body" style="padding: 24px; display: grid; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f0f4f8; padding-bottom: 12px;">
+                    <span style="color: #596578; font-weight: 500;">Daily Logins</span>
+                    <strong style="color: #24323b; font-size: 16px;">{{ daily_logins }}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #596578;">System Uptime</span>
-                    <strong style="color: #0b6e59;">99.90%</strong>
+                    <span style="color: #596578; font-weight: 500;">Support Queue</span>
+                    <strong style="color: #24323b; font-size: 16px;">{{ support_queue }}</strong>
                 </div>
             </div>
         </div>
@@ -53,24 +49,28 @@
 
     <!-- Deletion Logs -->
     <div class="pc-col-6">
-        <div class="pc-card" style="height: 100%;">
-            <div class="pc-card-head">
-                <strong style="color: #37485a;">Audit Oversight (Deletions)</strong>
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; height: 100%;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Audit Oversight (Deletions)</strong>
             </div>
             <div class="pc-table-wrap">
                 <table class="pc-table">
                     <thead>
-                        <tr><th>Action</th><th>Entity</th><th>When</th></tr>
+                        <tr>
+                            <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Action</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Entity</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">When</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for entry in deletion_logs %}
                         <tr>
-                            <td><span class="pc-chip pc-chip--danger">{{ entry.action_type }}</span></td>
-                            <td style="font-weight: 500;">{{ entry.entity_type }}</td>
-                            <td style="color: #596578;">{{ entry.timestamp|date:"M d, H:i" }}</td>
+                            <td style="padding: 16px 24px;"><span class="pc-chip pc-chip--danger" style="padding: 4px 10px; font-size: 12px;">{{ entry.action_type }}</span></td>
+                            <td style="font-weight: 500; padding: 16px 14px;">{{ entry.entity_type }}</td>
+                            <td style="color: #596578; padding: 16px 14px;">{{ entry.timestamp|date:"M d, H:i" }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" style="text-align: center; color: #98a1b3; padding: 24px;">No recent delete logs.</td></tr>
+                        <tr><td colspan="3" style="text-align: center; color: #8e9aab; padding: 40px 20px; font-size: 14px;">No recent delete logs.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -79,31 +79,36 @@
     </div>
 
     <!-- Audit Feed -->
-    <div class="pc-col-12" style="margin-top: 16px;">
-        <div class="pc-card">
-            <div class="pc-card-head">
-                <strong style="color: #37485a;">Recent Administrative Changes</strong>
-                <a href="{% url 'audit_log_list' %}" class="pc-btn pc-btn--ghost" style="min-height: 28px; padding: 4px 10px; font-size: 13px;">View All</a>
+    <div class="pc-col-12" style="margin-top: 8px;">
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Recent Administrative Changes</strong>
+                <a href="{% url 'audit_log_list' %}" class="pc-btn pc-btn--ghost" style="padding: 4px 12px; min-height: 28px; font-size: 13px; border-radius: 7px;">View All</a>
             </div>
             <div class="pc-table-wrap">
                 <table class="pc-table">
                     <thead>
-                        <tr><th>Actor</th><th>Action</th><th>Entity</th><th>Time</th></tr>
+                        <tr>
+                            <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Actor</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Action</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Entity</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Time</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for entry in audit_feed %}
                         <tr>
-                            <td style="font-weight: 500;">{{ entry.actor|default:"System" }}</td>
-                            <td>
-                                {% if entry.action_type == 'CREATE' %}<span class="pc-chip pc-chip--confirmed">CREATE</span>
-                                {% elif entry.action_type == 'DELETE' %}<span class="pc-chip pc-chip--danger">DELETE</span>
-                                {% else %}<span class="pc-chip pc-chip--scheduled">{{ entry.action_type }}</span>{% endif %}
+                            <td style="font-weight: 500; padding: 18px 24px;">{{ entry.actor|default:"System" }}</td>
+                            <td style="padding: 18px 14px;">
+                                {% if entry.action_type == 'CREATE' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">CREATE</span>
+                                {% elif entry.action_type == 'DELETE' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">DELETE</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ entry.action_type }}</span>{% endif %}
                             </td>
-                            <td>{{ entry.entity_type }}</td>
-                            <td style="color: #596578;">{{ entry.timestamp|date:"M d, H:i" }}</td>
+                            <td style="padding: 18px 14px;">{{ entry.entity_type }}</td>
+                            <td style="color: #596578; padding: 18px 14px;">{{ entry.timestamp|date:"M d, H:i" }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" style="text-align: center; color: #98a1b3; padding: 32px;">No audit activity available.</td></tr>
+                        <tr><td colspan="4" style="text-align: center; color: #8e9aab; padding: 50px 20px; font-size: 14px;">No audit activity available.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

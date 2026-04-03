@@ -1,9 +1,7 @@
+{% if request.user.role not in 'ADMIN,RECEPTIONIST' %}
 <header class="pc-header">
     <div class="pc-header-inner">
-        <div class="pc-search">
-            <i data-feather="search" style="color: #98a1b3; width: 18px; height: 18px;"></i>
-            <input type="text" placeholder="Search patients, doctors...">
-        </div>
+
         <div class="pc-header-actions">
             {% if request.user.is_authenticated %}
                 <div style="text-align: right; line-height: 1.2;">
@@ -15,3 +13,4 @@
         </div>
     </div>
 </header>
+{% endif %}

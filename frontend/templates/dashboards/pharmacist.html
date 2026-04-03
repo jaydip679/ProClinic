@@ -1,55 +1,116 @@
-<div class="pc-grid mb-4">
-    <div class="pc-col-4 pc-card" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white;">
+<div class="pc-grid" style="gap: var(--pc-space-5); margin-bottom: var(--pc-space-6);">
+    <div class="pc-col-4 pc-card" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white; border: none; box-shadow: 0 10px 30px rgba(12,167,137,0.2); border-radius: 14px; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Today's Prescriptions</h6>
-            <div class="pc-stat-value">{{ today_prescriptions }}</div>
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500; font-size: 14px;">Today's Prescriptions</h6>
+            <div class="pc-stat-value" style="font-size: 36px; margin-top: 8px;">{{ today_prescriptions }}</div>
+            <div style="font-size: 13px; opacity: 0.8; margin-top: 4px;">received today</div>
         </div>
     </div>
-    <div class="pc-col-4 pc-card pc-stat-primary">
+    <div class="pc-col-4 pc-card" style="background: linear-gradient(160deg, #e23e57, #c0392b); color: white; border: none; box-shadow: 0 10px 30px rgba(226,62,87,0.2); border-radius: 14px; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Total Medicine Lines</h6>
-            <div class="pc-stat-value">{{ total_medicine_lines }}</div>
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500; font-size: 14px;">Pending Queue</h6>
+            <div class="pc-stat-value" style="font-size: 36px; margin-top: 8px;">{{ pending_count }}</div>
+            <div style="font-size: 13px; opacity: 0.8; margin-top: 4px;">
+                <a href="{% url 'pharmacist_prescriptions' %}?status=PENDING" style="color: rgba(255,255,255,0.85); text-decoration: underline;">View queue →</a>
+            </div>
         </div>
     </div>
-    <div class="pc-col-4 pc-card pc-stat-secondary">
+    <div class="pc-col-4 pc-card" style="background: linear-gradient(160deg, #2c3e91, #1e2f7f); color: white; border: none; box-shadow: 0 10px 30px rgba(44,62,145,0.2); border-radius: 14px; padding: 8px;">
         <div class="pc-card-body">
-            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Dispense Queue</h6>
-            <div class="pc-stat-value">{{ dispense_queue|length }}</div>
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500; font-size: 14px;">Dispensed Today</h6>
+            <div class="pc-stat-value" style="font-size: 36px; margin-top: 8px;">{{ dispensed_today }}</div>
+            <div style="font-size: 13px; opacity: 0.8; margin-top: 4px;">completed today</div>
         </div>
     </div>
 </div>
 
-<div class="pc-grid">
-    <div class="pc-col-12">
-        <div class="pc-card">
-            <div class="pc-card-head">
-                <strong style="color: #37485a;">Prescription Fulfillment Access</strong>
+<div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+    <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8; background: linear-gradient(to right, #fff8e6, #fff);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="background: #e6a817; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i data-feather="package" style="width: 15px; height: 15px;"></i>
             </div>
-            <div class="pc-table-wrap">
-                <table class="pc-table">
-                    <thead><tr><th>Patient</th><th>Doctor</th><th>Time Created</th><th>Action</th></tr></thead>
-                    <tbody>
-                        {% for rx in recent_prescriptions %}
-                        <tr>
-                            <td style="font-weight: 600; color: #24323b;">{{ rx.patient }}</td>
-                            <td>{{ rx.doctor.get_full_name|default:rx.doctor.username }}</td>
-                            <td style="color: #596578;">{{ rx.created_at|date:"M d, H:i" }}</td>
-                            <td>
-                                {% if rx.pdf_file %}
-                                    <a href="{{ rx.pdf_file.url }}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: auto; font-size: 13px;" target="_blank">
-                                        <i data-feather="download" style="width: 14px; height: 14px;"></i> View PDF
-                                    </a>
-                                {% else %}
-                                    <span style="color: #98a1b3; font-size: 13px;">No file attached</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" style="text-align: center; color: #98a1b3; padding: 32px;">No active prescriptions.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div>
+                <strong style="color: #1a2e3b; font-size: 16px; display: block;">Pending Dispense Queue</strong>
+                <span style="font-size: 12px; color: #8e9aab;">Prescriptions waiting to be dispensed</span>
             </div>
         </div>
+        <a href="{% url 'pharmacist_prescriptions' %}" class="pc-btn pc-btn--ghost"
+           style="padding: 6px 16px; min-height: 34px; font-size: 13px; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+            <i data-feather="list" style="width: 14px; height: 14px;"></i> Full Queue
+        </a>
+    </div>
+    <div class="pc-table-wrap">
+        <table class="pc-table" style="min-width: 100%;">
+            <thead>
+                <tr>
+                    <th style="padding: 14px 24px;">Patient</th>
+                    <th style="padding: 14px 14px;">Prescribed By</th>
+                    <th style="padding: 14px 14px;">Medications</th>
+                    <th style="padding: 14px 14px;">Time</th>
+                    <th style="padding: 14px 24px; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rx in dispense_queue %}
+                <tr>
+                    <td style="padding: 16px 24px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="pc-avatar" style="width: 34px; height: 34px; font-size: 13px; background: #2c3e91; color: #fff; flex-shrink: 0;">
+                                {{ rx.patient.first_name|first }}{{ rx.patient.last_name|first }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #1a2e3b;">{{ rx.patient }}</div>
+                                <div style="font-size: 12px; color: #98a1b3;">Rx #{{ rx.pk }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 16px 14px; color: #596578; font-size: 13px;">
+                        Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}
+                    </td>
+                    <td style="padding: 16px 14px;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            {% for item in rx.items.all %}
+                            <span style="background: #f0f4f8; border: 1px solid #dbe3ed; border-radius: 5px; padding: 2px 8px; font-size: 12px; color: #37485a;">
+                                {{ item.medicine_name }}
+                            </span>
+                            {% empty %}
+                            <span style="color: #98a1b3; font-size: 12px;">—</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td style="padding: 16px 14px; color: #98a1b3; font-size: 12px;">
+                        {{ rx.created_at|date:"M d, H:i" }}
+                    </td>
+                    <td style="padding: 16px 24px; text-align: right;">
+                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <a href="{% url 'pharmacist_prescription_detail' rx.pk %}"
+                               class="pc-btn pc-btn--ghost"
+                               style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px;">
+                                Inspect
+                            </a>
+                            <form method="post" action="{% url 'dispense_prescription' rx.pk %}"
+                                  onsubmit="return confirm('Dispense Rx #{{ rx.pk }} for {{ rx.patient }}?');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="pc-btn pc-btn--primary"
+                                        style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; background: linear-gradient(135deg, #0ca789, #1fa574); display: flex; align-items: center; gap: 5px;">
+                                    <i data-feather="check" style="width: 12px; height: 12px;"></i> Dispense
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 60px 20px; color: #8e9aab;">
+                        <i data-feather="check-circle" style="width: 40px; height: 40px; display: block; margin: 0 auto 12px; opacity: 0.35; color: #0ca789;"></i>
+                        <div style="font-size: 15px; font-weight: 500; margin-bottom: 4px;">Queue is clear!</div>
+                        <div style="font-size: 13px;">All prescriptions have been dispensed.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
