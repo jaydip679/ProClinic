@@ -342,7 +342,7 @@ class PatientLabReportListCreateView(APIView):
             action_type='CREATE',
             entity_type='LabReport',
             entity_id=report.pk,
-            changes={'title': report.title, 'filename': report.file.name},
+            changes={'test_name': report.test_name, 'filename': report.pdf_file.name},
         )
         return Response(
             LabReportSerializer(report).data,

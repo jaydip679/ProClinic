@@ -130,7 +130,7 @@ class PatientInvoiceSerializer(serializers.ModelSerializer):
 # ─── Lab Reports ──────────────────────────────────────────────────────────────
 
 class LabReportSerializer(serializers.ModelSerializer):
-    """Serializer for patient-facing lab report access."""
+    """Serializer for patient-facing lab report access and upload."""
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
@@ -145,4 +145,4 @@ class LabReportSerializer(serializers.ModelSerializer):
             'uploaded_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'status', 'uploaded_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'status_display', 'uploaded_at', 'updated_at']
