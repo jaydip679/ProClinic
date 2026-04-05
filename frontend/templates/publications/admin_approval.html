@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Publication Approval Panel — ProClinic Admin{% endblock %}
+
+{% block content %}
+<section class="pc-section">
+
+  <div class="pc-section-header" style="margin-bottom:2rem;">
+    <div>
+      <h1 class="pc-title">Publication Approval Panel</h1>
+      <p class="pc-subtitle" style="color:var(--pc-text-muted);">Review and approve or reject research paper submissions.</p>
+    </div>
+    <a href="{% url 'publications_public_list' %}" class="pc-btn pc-btn--ghost">
+      <i data-feather="globe"></i> Public Listing
+    </a>
+  </div>
+
+  <!-- ── Pending ──────────────────────────────────────────────────────────── -->
+  <div style="margin-bottom:2.5rem;">
+    <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+      <i data-feather="clock" style="width:18px;height:18px;color:#f59e0b;"></i>
+      Pending Review
+      {% if pending %}
+      <span class="pc-badge pc-badge--warning" style="font-size:.75rem;">{{ pending|length }}</span>
+      {% endif %}
+    </h2>
+
+    {% if not pending %}
+    <p style="color:var(--pc-text-muted);font-size:.9rem;">All submissions have been reviewed. ✓</p>
+    {% else %}
+    <div style="display:grid;gap:1rem;">
+      {% for paper in pending %}
+      <div class="pc-card" style="padding:1.25rem 1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:.25rem;">{{ paper.title }}</h3>
+            <p style="font-size:.8rem;color:var(--pc-text-muted);margin-bottom:.3rem;">
+              By {{ paper.authors }} &nbsp;·&nbsp;
+              Submitted by Dr. {{ paper.doctor.get_full_name|default:paper.doctor.username }} &nbsp;·&nbsp;
+              {{ paper.created_at|date:"d M Y" }}
+            </p>
+            <p style="font-size:.875rem;color:var(--pc-text);line-height:1.6;">{{ paper.abstract|truncatewords:30 }}</p>
+            {% if paper.pdf_file %}
+            <a href="{{ paper.pdf_file.url }}" target="_blank"
+               style="font-size:.8rem;color:var(--pc-primary);margin-top:.4rem;display:inline-flex;align-items:center;gap:.25rem;">
+              <i data-feather="file-text" style="width:13px;height:13px;"></i> View Full Paper (PDF)
+            </a>
+            {% endif %}
+          </div>
+
+          <!-- Approve / Reject forms -->
+          <div style="display:flex;flex-direction:column;gap:.6rem;min-width:200px;">
+            <!-- Approve -->
+            <form method="post" action="{% url 'admin_approve_paper' paper.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="pc-btn pc-btn--success pc-btn--sm" style="width:100%;">
+                <i data-feather="check-circle"></i> Approve
+              </button>
+            </form>
+
+            <!-- Reject with reason -->
+            <details style="border:1px solid var(--pc-border);border-radius:6px;overflow:hidden;">
+              <summary style="padding:.4rem .75rem;cursor:pointer;font-size:.8rem;font-weight:600;
+                              background:rgba(239,68,68,.06);color:#dc2626;list-style:none;
+                              display:flex;align-items:center;gap:.4rem;">
+                <i data-feather="x-circle" style="width:13px;height:13px;"></i> Reject
+              </summary>
+              <form method="post" action="{% url 'admin_reject_paper' paper.pk %}" style="padding:.75rem;">
+                {% csrf_token %}
+                <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem;">Rejection reason (optional)</label>
+                <textarea name="rejection_reason" rows="2"
+                          style="width:100%;font-size:.8rem;padding:.4rem .6rem;
+                                 border:1px solid var(--pc-border);border-radius:4px;
+                                 background:var(--pc-bg-card);color:var(--pc-text);resize:vertical;"
+                          placeholder="E.g. insufficient methodology detail…"></textarea>
+                <button type="submit" class="pc-btn pc-btn--danger pc-btn--sm" style="margin-top:.5rem;width:100%;">
+                  Confirm Reject
+                </button>
+              </form>
+            </details>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Recently Approved ─────────────────────────────────────────────────── -->
+  <div style="margin-bottom:2.5rem;">
+    <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+      <i data-feather="check-circle" style="width:18px;height:18px;color:#10b981;"></i>
+      Recently Approved <span style="font-size:.8rem;font-weight:400;color:var(--pc-text-muted);">(last 10)</span>
+    </h2>
+    {% if not approved %}
+    <p style="color:var(--pc-text-muted);font-size:.9rem;">No approved papers yet.</p>
+    {% else %}
+    <div class="pc-table-wrapper">
+      <table class="pc-table">
+        <thead>
+          <tr>
+            <th>Title</th><th>Doctor</th><th>Approved By</th><th>Approved On</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for paper in approved %}
+          <tr>
+            <td style="font-weight:600;">{{ paper.title }}</td>
+            <td>{{ paper.doctor.get_full_name|default:paper.doctor.username }}</td>
+            <td>{{ paper.approved_by.get_full_name|default:paper.approved_by.username|default:"—" }}</td>
+            <td>{{ paper.approved_at|date:"d M Y" }}</td>
+            <td>
+              <a href="{% url 'publications_public_detail' paper.pk %}" class="pc-btn pc-btn--ghost pc-btn--sm">
+                <i data-feather="eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Recently Rejected ─────────────────────────────────────────────────── -->
+  <div>
+    <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+      <i data-feather="x-circle" style="width:18px;height:18px;color:#ef4444;"></i>
+      Recently Rejected <span style="font-size:.8rem;font-weight:400;color:var(--pc-text-muted);">(last 10)</span>
+    </h2>
+    {% if not rejected %}
+    <p style="color:var(--pc-text-muted);font-size:.9rem;">No rejected papers.</p>
+    {% else %}
+    <div class="pc-table-wrapper">
+      <table class="pc-table">
+        <thead>
+          <tr><th>Title</th><th>Doctor</th><th>Rejected On</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          {% for paper in rejected %}
+          <tr>
+            <td style="font-weight:600;">{{ paper.title }}</td>
+            <td>{{ paper.doctor.get_full_name|default:paper.doctor.username }}</td>
+            <td>{{ paper.updated_at|date:"d M Y" }}</td>
+            <td style="color:var(--pc-text-muted);font-size:.85rem;">
+              {{ paper.rejection_reason|default:"No reason provided" }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+</section>
+{% endblock %}

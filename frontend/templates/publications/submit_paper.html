@@ -1,25 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card shadow-sm mx-auto" style="max-width: 700px;">
-        <div class="card-header bg-indigo text-white" style="background-color: #6610f2;">
-            <h4 class="mb-0 text-white">Submit Research Paper</h4>
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-6);">
+        <h2 class="pc-h2" style="margin: 0;">Research Portal</h2>
+        <p class="pc-muted" style="margin-top: 4px;">Submit your clinical research papers for peer review and publication.</p>
+    </div>
+
+    <div class="pc-card" style="max-width: 700px; box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+        <div class="pc-card-head" style="padding: 24px; border-bottom-color: #f0f4f8; background: linear-gradient(to right, #f2faf8, #fff);">
+            <strong style="color: #1a322c; font-size: 16px; letter-spacing: -0.2px;">Submit New Paper</strong>
         </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
+        <div class="pc-card-body" style="padding: 32px 24px;">
+            {% if form.non_field_errors %}
+                <div class="pc-alert pc-alert--danger" style="margin-bottom: 24px;">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data" novalidate id="researchForm">
                 {% csrf_token %}
                 {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label"><strong>{{ field.label }}</strong></label>
+                <div class="pc-form-row" style="margin-bottom: 24px;">
+                    <label class="pc-label" style="font-size: 13px;" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
+                    {% if field.errors %}<div class="pc-inline-error">{{ field.errors|striptags }}</div>{% endif %}
+                    {% if field.help_text %}<div class="pc-help" style="margin-top: 6px;">{{ field.help_text }}</div>{% endif %}
                 </div>
                 {% endfor %}
-                <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-primary">Upload for Approval</button>
+                <div style="margin-top: 32px;">
+                    <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%; padding: 12px; font-size: 15px; border-radius: 8px;">Upload for Approval</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const formFields = document.querySelectorAll('#researchForm input:not([type="hidden"]), #researchForm select, #researchForm textarea');
+        formFields.forEach(field => {
+            if (field.type === 'submit') return;
+            if (field.tagName === 'SELECT') {
+                field.classList.add('pc-select');
+            } else if (field.tagName === 'TEXTAREA') {
+                field.classList.add('pc-textarea');
+            } else {
+                if (field.type !== 'file' && !field.classList.contains('pc-input')) field.classList.add('pc-input');
+                // Basic styling for file inputs directly
+                if (field.type === 'file') {
+                    field.style.padding = '8px 0';
+                    field.style.fontSize = '14px';
+                }
+            }
+        });
+        if (typeof feather !== 'undefined') feather.replace();
+    });
+</script>
 {% endblock %}

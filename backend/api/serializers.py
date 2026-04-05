@@ -36,6 +36,41 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 # Publication Serializer
 class PublicationSerializer(serializers.ModelSerializer):
+    doctor_name   = serializers.CharField(source='doctor.get_full_name', read_only=True)
+    approver_name = serializers.SerializerMethodField(read_only=True)
+    status_label  = serializers.CharField(source='get_status_display', read_only=True)
+    is_public     = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Publication
-        fields = '__all__'
+        fields = [
+            'id', 'doctor', 'doctor_name',
+            'title', 'abstract', 'authors', 'pdf_file',
+            'status', 'status_label', 'is_public',
+            'admin_notes', 'rejection_reason',
+            'approved_by', 'approver_name', 'approved_at',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'status', 'approved_by', 'approved_at',
+            'doctor_name', 'approver_name', 'status_label', 'is_public',
+        ]
+
+    def get_approver_name(self, obj):
+        if obj.approved_by:
+            return obj.approved_by.get_full_name() or obj.approved_by.username
+        return None
+
+
+class PublicPublicationSerializer(serializers.ModelSerializer):
+    """Minimal serializer for unauthenticated public listing."""
+    doctor_name  = serializers.CharField(source='doctor.get_full_name', read_only=True)
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = Publication
+        fields = [
+            'id', 'title', 'abstract', 'authors',
+            'doctor_name', 'pdf_file',
+            'approved_at', 'status_label',
+        ]

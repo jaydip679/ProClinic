@@ -27,6 +27,7 @@ from .serializers import (
     InvoiceSerializer,
     PrescriptionSerializer,
     PublicationSerializer,
+    PublicPublicationSerializer,
 )
 
 # Import PatientViewSet from patients app (registered separately in urls.py)
@@ -190,7 +191,7 @@ class PublicationViewSet(viewsets.ModelViewSet):
     Ordering:   ?ordering=created_at | -created_at | title
     Pagination: ?page=  ?page_size=  (default 50, max 200)
     """
-    queryset = Publication.objects.all().order_by('-created_at')
+    queryset = Publication.objects.select_related('doctor', 'approved_by').order_by('-created_at')
     serializer_class = PublicationSerializer
     permission_classes = [IsAuthenticated, IsStaff]
     pagination_class = LargeResultsSetPagination
@@ -200,3 +201,78 @@ class PublicationViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'authors', 'abstract']
     ordering_fields = ['created_at', 'title']
     ordering = ['-created_at']
+
+    # ── Public listing (no auth) ──────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'], permission_classes=[], url_path='public-list')
+    def public_list(self, request):
+        """
+        GET /api/publications/public-list/
+
+        Returns all APPROVED papers. No authentication required.
+        Supports ?search= and ?ordering= but uses the minimal public serializer.
+        """
+        from rest_framework.permissions import AllowAny
+        qs = (
+            Publication.objects
+            .filter(status=Publication.STATUS_APPROVED)
+            .select_related('doctor')
+            .order_by('-approved_at')
+        )
+        # Apply search manually since we skip the default filter_backends chain
+        search = request.query_params.get('search', '').strip()
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(authors__icontains=search) |
+                Q(abstract__icontains=search)
+            )
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = PublicPublicationSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = PublicPublicationSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    # ── Approve ───────────────────────────────────────────────────────────────
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsStaff], url_path='approve')
+    def approve(self, request, pk=None):
+        """
+        POST /api/publications/{id}/approve/
+
+        Admin/staff only. Approves the paper and makes it publicly visible.
+        """
+        from rest_framework.permissions import IsAdminUser
+        if not (request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN'):
+            return Response({'detail': 'Only admins can approve publications.'}, status=status.HTTP_403_FORBIDDEN)
+
+        paper = self.get_object()
+        if paper.status == Publication.STATUS_APPROVED:
+            return Response({'detail': 'Already approved.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        paper.approve(reviewer=request.user)
+        return Response(self.get_serializer(paper).data, status=status.HTTP_200_OK)
+
+    # ── Reject ────────────────────────────────────────────────────────────────
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsStaff], url_path='reject')
+    def reject(self, request, pk=None):
+        """
+        POST /api/publications/{id}/reject/
+
+        Admin/staff only. Body: {"reason": "..."} (optional).
+        """
+        if not (request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN'):
+            return Response({'detail': 'Only admins can reject publications.'}, status=status.HTTP_403_FORBIDDEN)
+
+        paper = self.get_object()
+        if paper.status == Publication.STATUS_REJECTED:
+            return Response({'detail': 'Already rejected.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reason = request.data.get('reason', '').strip()
+        paper.reject(reviewer=request.user, reason=reason)
+        return Response(self.get_serializer(paper).data, status=status.HTTP_200_OK)

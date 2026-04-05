@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ paper.title }} — ProClinic Research{% endblock %}
+
+{% block content %}
+<section class="pc-section">
+
+  <!-- Back link -->
+  <a href="{% url 'publications_public_list' %}" class="pc-btn pc-btn--ghost pc-btn--sm" style="margin-bottom:1.5rem;display:inline-flex;">
+    <i data-feather="arrow-left"></i> All Publications
+  </a>
+
+  <div class="pc-card" style="padding:2rem;max-width:860px;">
+
+    <!-- Status -->
+    <span class="pc-badge pc-badge--success" style="margin-bottom:1rem;display:inline-block;">Approved</span>
+
+    <!-- Title -->
+    <h1 style="font-size:1.5rem;font-weight:800;line-height:1.35;color:var(--pc-text);margin-bottom:1rem;">
+      {{ paper.title }}
+    </h1>
+
+    <!-- Meta row -->
+    <div style="display:flex;flex-wrap:wrap;gap:1.25rem;font-size:.875rem;color:var(--pc-text-muted);margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--pc-border);">
+      <span><i data-feather="users" style="width:14px;height:14px;vertical-align:middle;"></i> {{ paper.authors }}</span>
+      <span><i data-feather="user" style="width:14px;height:14px;vertical-align:middle;"></i> Dr. {{ paper.doctor.get_full_name|default:paper.doctor.username }}</span>
+      <span><i data-feather="calendar" style="width:14px;height:14px;vertical-align:middle;"></i> Published {{ paper.approved_at|date:"d F Y" }}</span>
+    </div>
+
+    <!-- Abstract -->
+    <h2 style="font-size:1rem;font-weight:700;color:var(--pc-text);margin-bottom:.75rem;">Abstract</h2>
+    <p style="color:var(--pc-text);line-height:1.75;white-space:pre-wrap;margin-bottom:2rem;">{{ paper.abstract }}</p>
+
+    <!-- PDF download -->
+    {% if paper.pdf_file %}
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <a href="{{ paper.pdf_file.url }}" target="_blank" class="pc-btn pc-btn--primary">
+        <i data-feather="file-text"></i> View PDF
+      </a>
+      <a href="{{ paper.pdf_file.url }}" download class="pc-btn pc-btn--outline">
+        <i data-feather="download"></i> Download
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
