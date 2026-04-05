@@ -108,7 +108,7 @@ class PatientVisitListView(generics.ListAPIView):
 
     def get_queryset(self):
         patient = _require_patient(self.request.user)
-        return Visit.objects.filter(patient=patient).select_related('doctor')
+        return Visit.objects.filter(patient=patient).select_related('doctor').order_by('-visit_date')
 
 
 # ─── Appointments ─────────────────────────────────────────────────────────────
@@ -279,6 +279,7 @@ class PatientPrescriptionListView(generics.ListAPIView):
             Prescription.objects.filter(patient=patient)
             .select_related('doctor')
             .prefetch_related('items')
+            .order_by('-created_at')
         )
 
 
@@ -312,6 +313,7 @@ class PatientInvoiceListView(generics.ListAPIView):
         return (
             Invoice.objects.filter(patient=patient)
             .prefetch_related('items')
+            .order_by('-created_at')
         )
 
 

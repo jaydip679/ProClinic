@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
-    
+    'django_filters',
+
     # Project apps
     'api',
     'accounts',
@@ -135,6 +136,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # ── Filtering / Search / Ordering ─────────────────────────────────────
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    # ── Pagination ────────────────────────────────────────────────────────
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.StandardResultsSetPagination',
+    'PAGE_SIZE': 20,
 }
 
 # 14. SimpleJWT Settings

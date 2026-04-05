@@ -282,8 +282,9 @@ class PatientPrescriptionTests(PatientTestBase):
         self.authenticate_patient()
         resp = self.client.get('/api/patient/prescriptions/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 1)
-        self.assertGreaterEqual(len(resp.data[0]['items']), 1)
+        data = resp.data.get('results', resp.data)  # handle paginated or plain list
+        self.assertEqual(len(data), 1)
+        self.assertGreaterEqual(len(data[0]['items']), 1)
 
     def test_detail_own_prescription(self):
         self.authenticate_patient()
@@ -295,7 +296,8 @@ class PatientPrescriptionTests(PatientTestBase):
         self.authenticate_patient(self.patient_user2)
         resp = self.client.get('/api/patient/prescriptions/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 0)
+        data = resp.data.get('results', resp.data)
+        self.assertEqual(len(data), 0)
 
     def test_other_patient_cannot_see_prescription_detail(self):
         self.authenticate_patient(self.patient_user2)
@@ -332,15 +334,17 @@ class PatientInvoiceTests(PatientTestBase):
         self.authenticate_patient()
         resp = self.client.get('/api/patient/invoices/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 1)
-        self.assertEqual(resp.data[0]['total_amount'], '1500.00')
-        self.assertEqual(len(resp.data[0]['items']), 2)
+        data = resp.data.get('results', resp.data)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['total_amount'], '1500.00')
+        self.assertEqual(len(data[0]['items']), 2)
 
     def test_other_patient_cannot_see_invoices(self):
         self.authenticate_patient(self.patient_user2)
         resp = self.client.get('/api/patient/invoices/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 0)
+        data = resp.data.get('results', resp.data)
+        self.assertEqual(len(data), 0)
 
     def test_patient_cannot_create_invoice(self):
         """Patient API has no POST for invoices — only GET."""
@@ -449,14 +453,16 @@ class PatientVisitTests(PatientTestBase):
         self.authenticate_patient()
         resp = self.client.get('/api/patient/visits/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 1)
-        self.assertEqual(resp.data[0]['diagnosis'], 'Healthy')
+        data = resp.data.get('results', resp.data)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['diagnosis'], 'Healthy')
 
     def test_other_patient_cannot_see_visits(self):
         self.authenticate_patient(self.patient_user2)
         resp = self.client.get('/api/patient/visits/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 0)
+        data = resp.data.get('results', resp.data)
+        self.assertEqual(len(data), 0)
 
 
 # ─── Staff API Permission Tests ──────────────────────────────────────────────

@@ -1,12 +1,38 @@
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
+from rest_framework.permissions import IsAuthenticated
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+
+from api.filters import PatientFilter
+from api.pagination import StandardResultsSetPagination
+from api.permissions import IsStaff
+
 from .models import Patient
 from .serializers import PatientSerializer
-from django.shortcuts import redirect, render, get_object_or_404
-from django.contrib.auth.decorators import login_required
+
 
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
+    """
+    Staff-facing patient management.
+
+    Filtering:  ?first_name=  ?last_name=  ?blood_group=  ?gender=
+    Search:     ?search=  (first_name, last_name, contact_number, email)
+    Ordering:   ?ordering=first_name | last_name | created_at
+    Pagination: ?page=  ?page_size=  (default 20, max 100)
+    """
+    queryset = Patient.objects.all().order_by('last_name', 'first_name')
     serializer_class = PatientSerializer
+    permission_classes = [IsAuthenticated, IsStaff]
+    pagination_class = StandardResultsSetPagination
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PatientFilter
+    search_fields = ['first_name', 'last_name', 'contact_number', 'email']
+    ordering_fields = ['first_name', 'last_name', 'created_at']
+    ordering = ['last_name', 'first_name']
+
 
 @login_required
 def patient_list(request):
