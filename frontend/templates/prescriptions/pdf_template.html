@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prescription — {{ prescription.patient }}</title>
+  <style>
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Page setup ─────────────────────────────────────────── */
+    @page {
+      size: A4;
+      margin: 20mm 18mm 22mm 18mm;
+      @bottom-center {
+        content: "ProClinic — Confidential Medical Record | Page " counter(page) " of " counter(pages);
+        font-size: 8pt;
+        color: #9ca3af;
+      }
+    }
+
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.55;
+      color: #111827;
+      background: #ffffff;
+    }
+
+    /* ── Header / letterhead ────────────────────────────────── */
+    .letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #0f766e;
+      padding-bottom: 10pt;
+      margin-bottom: 14pt;
+    }
+
+    .letterhead-left .clinic-name {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #0f766e;
+      letter-spacing: -0.5px;
+    }
+
+    .letterhead-left .clinic-tagline {
+      font-size: 8pt;
+      color: #6b7280;
+      margin-top: 2pt;
+    }
+
+    .letterhead-right {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #6b7280;
+      line-height: 1.7;
+    }
+
+    /* ── Rx banner ──────────────────────────────────────────── */
+    .rx-banner {
+      background: #f0fdf4;
+      border-left: 4px solid #0f766e;
+      padding: 8pt 12pt;
+      margin-bottom: 14pt;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rx-banner .rx-symbol {
+      font-size: 22pt;
+      font-weight: 800;
+      color: #0f766e;
+      line-height: 1;
+    }
+
+    .rx-banner .rx-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #374151;
+    }
+
+    .rx-banner .rx-meta strong {
+      display: block;
+      font-size: 9.5pt;
+    }
+
+    /* ── Two-column info grid ───────────────────────────────── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10pt;
+      margin-bottom: 14pt;
+    }
+
+    .info-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 4pt;
+      padding: 9pt 11pt;
+    }
+
+    .info-card .card-label {
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #6b7280;
+      margin-bottom: 5pt;
+    }
+
+    .info-card .card-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3pt;
+    }
+
+    .info-card .field-name {
+      color: #6b7280;
+      font-size: 8.5pt;
+      min-width: 70pt;
+    }
+
+    .info-card .field-value {
+      font-weight: 600;
+      font-size: 8.5pt;
+      text-align: right;
+    }
+
+    /* ── Visit / diagnosis section ──────────────────────────── */
+    .section-heading {
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #0f766e;
+      border-bottom: 1px solid #d1fae5;
+      padding-bottom: 3pt;
+      margin-bottom: 8pt;
+    }
+
+    .section {
+      margin-bottom: 14pt;
+    }
+
+    .text-block {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 4pt;
+      padding: 8pt 10pt;
+      font-size: 9pt;
+      white-space: pre-wrap;
+      color: #374151;
+      min-height: 20pt;
+    }
+
+    .text-block.empty {
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    /* ── Medicines table ────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14pt;
+      font-size: 9pt;
+    }
+
+    thead tr {
+      background: #0f766e;
+      color: #ffffff;
+    }
+
+    thead th {
+      padding: 6pt 9pt;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8.5pt;
+      letter-spacing: 0.3px;
+    }
+
+    tbody tr:nth-child(even) { background: #f9fafb; }
+
+    tbody td {
+      padding: 6pt 9pt;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+
+    td.med-name { font-weight: 600; }
+
+    /* ── Signature block ────────────────────────────────────── */
+    .signature-block {
+      margin-top: 24pt;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .signature-inner {
+      text-align: center;
+      width: 160pt;
+    }
+
+    .sig-line {
+      border-top: 1.5px solid #374151;
+      margin-top: 28pt;
+      margin-bottom: 4pt;
+    }
+
+    .sig-label {
+      font-size: 8pt;
+      color: #6b7280;
+    }
+
+    .sig-name {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    /* ── Footer disclaimer ──────────────────────────────────── */
+    .footer-disclaimer {
+      margin-top: 20pt;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 6pt;
+      font-size: 7.5pt;
+      color: #9ca3af;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Letterhead ──────────────────────────────────────────── -->
+  <div class="letterhead">
+    <div class="letterhead-left">
+      <div class="clinic-name">ProClinic</div>
+      <div class="clinic-tagline">Integrated Hospital Management System</div>
+    </div>
+    <div class="letterhead-right">
+      <strong>Date:</strong> {{ issued_date }}<br>
+      <strong>Prescription #:</strong> {{ prescription.id }}<br>
+      {% if prescription.appointment %}<strong>Appointment #:</strong> {{ prescription.appointment.id }}<br>{% endif %}
+    </div>
+  </div>
+
+  <!-- ── Rx Banner ───────────────────────────────────────────── -->
+  <div class="rx-banner">
+    <div class="rx-symbol">℞</div>
+    <div class="rx-meta">
+      <strong>{{ prescription.doctor.get_full_name|default:prescription.doctor.username }}</strong>
+      Prescribing Physician
+    </div>
+  </div>
+
+  <!-- ── Patient & Doctor Info ───────────────────────────────── -->
+  <div class="info-grid">
+    <!-- Patient card -->
+    <div class="info-card">
+      <div class="card-label">Patient Details</div>
+      <div class="card-row">
+        <span class="field-name">Full Name</span>
+        <span class="field-value">{{ prescription.patient.first_name }} {{ prescription.patient.last_name }}</span>
+      </div>
+      <div class="card-row">
+        <span class="field-name">Date of Birth</span>
+        <span class="field-value">{{ prescription.patient.date_of_birth }}</span>
+      </div>
+      <div class="card-row">
+        <span class="field-name">Gender</span>
+        <span class="field-value">{{ prescription.patient.gender }}</span>
+      </div>
+      <div class="card-row">
+        <span class="field-name">Blood Group</span>
+        <span class="field-value">{{ prescription.patient.blood_group }}</span>
+      </div>
+      {% if prescription.patient.allergies %}
+      <div class="card-row">
+        <span class="field-name">Allergies</span>
+        <span class="field-value" style="color:#dc2626;">{{ prescription.patient.allergies }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Doctor / Visit card -->
+    <div class="info-card">
+      <div class="card-label">Physician Details</div>
+      <div class="card-row">
+        <span class="field-name">Doctor</span>
+        <span class="field-value">Dr. {{ prescription.doctor.get_full_name|default:prescription.doctor.username }}</span>
+      </div>
+      {% if visit %}
+      <div class="card-row">
+        <span class="field-name">Visit Date</span>
+        <span class="field-value">{{ visit.visit_date|date:"d M Y" }}</span>
+      </div>
+      {% endif %}
+      <div class="card-row">
+        <span class="field-name">Issued On</span>
+        <span class="field-value">{{ issued_date }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Visit Notes ─────────────────────────────────────────── -->
+  {% if visit %}
+  <div class="section">
+    <div class="section-heading">Diagnosis</div>
+    {% if visit.diagnosis %}
+      <div class="text-block">{{ visit.diagnosis }}</div>
+    {% else %}
+      <div class="text-block empty">No diagnosis recorded.</div>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <div class="section-heading">Clinical Notes</div>
+    {% if visit.notes %}
+      <div class="text-block">{{ visit.notes }}</div>
+    {% else %}
+      <div class="text-block empty">No clinical notes recorded.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ── Medicines ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-heading">Prescribed Medicines</div>
+    {% if items %}
+    <table>
+      <thead>
+        <tr>
+          <th style="width:4%">#</th>
+          <th style="width:32%">Medicine</th>
+          <th style="width:16%">Dosage</th>
+          <th style="width:30%">Instructions</th>
+          <th style="width:18%">Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="med-name">{{ item.medicine_name }}</td>
+          <td>{{ item.dosage }}</td>
+          <td>{{ item.instructions }}</td>
+          <td>{{ item.duration }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="text-block empty">No medicines listed in this prescription.</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Signature ───────────────────────────────────────────── -->
+  <div class="signature-block">
+    <div class="signature-inner">
+      <div class="sig-line"></div>
+      <div class="sig-name">Dr. {{ prescription.doctor.get_full_name|default:prescription.doctor.username }}</div>
+      <div class="sig-label">Signature of Prescribing Physician</div>
+    </div>
+  </div>
+
+  <!-- ── Disclaimer ─────────────────────────────────────────── -->
+  <div class="footer-disclaimer">
+    This prescription is valid for 30 days from the date of issue.
+    Generated by ProClinic Hospital Management System — For medical use only.
+    Do not alter this document.
+  </div>
+
+</body>
+</html>

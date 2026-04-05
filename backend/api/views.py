@@ -66,9 +66,50 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
-    queryset = Prescription.objects.all()
+    queryset = Prescription.objects.select_related(
+        'patient', 'doctor', 'visit', 'appointment',
+    ).prefetch_related('items')
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated, IsStaff]
+
+    # ── PDF export ────────────────────────────────────────────────────────────
+
+    @action(detail=True, methods=['get'], url_path='pdf')
+    def pdf(self, request, pk=None):
+        """
+        GET /api/prescriptions/{id}/pdf/
+
+        Generates a styled PDF using WeasyPrint and returns it as an inline PDF
+        response (Content-Type: application/pdf).  The generated file is also
+        cached in prescription.pdf_file for future requests.
+        """
+        from prescriptions.utils import prescription_pdf_response
+
+        prescription = self.get_object()
+
+        try:
+            return prescription_pdf_response(prescription)
+        except RuntimeError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=['get'], url_path='html-preview')
+    def html_preview(self, request, pk=None):
+        """
+        GET /api/prescriptions/{id}/html-preview/
+
+        Returns the raw HTML that would be converted to PDF.
+        Useful for template debugging without invoking WeasyPrint.
+        """
+        from django.http import HttpResponse
+        from prescriptions.utils import render_prescription_html
+
+        prescription = self.get_object()
+        html = render_prescription_html(prescription)
+        return HttpResponse(html, content_type='text/html')
+
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
