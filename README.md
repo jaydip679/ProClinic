@@ -12,13 +12,17 @@
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Architecture Overview](#-architecture-overview)
+- [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Quick Start (Local)](#-quick-start-local)
 - [Docker Setup](#-docker-setup)
 - [Environment Variables](#-environment-variables)
 - [API Reference](#-api-reference)
-- [Running Tests](#-running-tests)
+- [Database Design](#-database-design)
+- [Running Tests & Coverage](#-running-tests--coverage)
 - [Troubleshooting](#-troubleshooting)
+- [Further Docs](#-further-docs)
 
 ---
 
@@ -26,15 +30,69 @@
 
 | Module | Description |
 |---|---|
-| **Authentication & Roles** | Role-based access for Admin, Doctor, and Patient with JWT + session auth |
-| **Patient Records** | Full EHR including visit history, demographics, and lab reports |
-| **Appointments** | Booking, rescheduling, cancellation, and doctor availability management |
-| **Prescriptions** | Create and manage prescriptions; generate PDF exports via WeasyPrint |
-| **Billing & Invoices** | Generate itemised invoices; PDF export; patient invoice portal |
-| **Lab Reports** | Upload and retrieve lab reports linked to patient visits |
-| **Audit Logging** | System-wide activity log for all sensitive operations |
-| **Research Module** | Manage and browse clinical research publications |
-| **REST API** | Full JWT-secured REST API built with Django REST Framework |
+| **Authentication & Roles** | Role-based access (Admin, Doctor, Patient) with JWT + session auth. Argon2 password hashing. |
+| **Patient Records** | Full EHR: demographics, visit history, diagnoses, allergies. |
+| **Appointments** | Booking, rescheduling, cancellation with status lifecycle (SCHEDULED → COMPLETED / CANCELLED / RESCHEDULED / NO_SHOW). |
+| **Prescriptions** | Create multi-item prescriptions; generate and cache PDF exports via WeasyPrint. |
+| **Billing & Invoices** | Itemised invoices with UNPAID / PAID / CANCELLED lifecycle; patient self-service portal. |
+| **Lab Reports** | Upload PDF lab reports (≤5 MB); pending → verified → archived status tracking. |
+| **Audit Logging** | Automatic CREATE / UPDATE / DELETE logs for all key models via Django signals. |
+| **Research Module** | Doctor submission → admin approval → public listing workflow. |
+| **REST API** | Full JWT-secured REST API with filtering, search, ordering, and pagination. |
+
+---
+
+## 🏗 Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser / Client                        │
+└────────────────────┬──────────────────────────┬────────────────┘
+                     │ Web UI (HTML)             │ REST API (JSON)
+                     ▼                           ▼
+┌────────────────────────────────────────────────────────────────┐
+│                     Django Application Layer                    │
+│                                                                 │
+│  ┌───────────┐  ┌──────────┐  ┌─────────┐  ┌──────────────┐   │
+│  │ accounts  │  │ patients │  │  appts  │  │ prescriptions│   │
+│  │ (auth)    │  │ (EHR)    │  │         │  │ + billing    │   │
+│  └───────────┘  └──────────┘  └─────────┘  └──────────────┘   │
+│  ┌───────────┐  ┌──────────┐  ┌─────────────────────────────┐  │
+│  │   audit   │  │  publi-  │  │   api/  (DRF ViewSets,      │  │
+│  │ (signals) │  │ cations  │  │   serializers, filters)     │  │
+│  └───────────┘  └──────────┘  └─────────────────────────────┘  │
+└────────────────────────────────┬───────────────────────────────┘
+                                 │ ORM (Django)
+                     ┌───────────▼──────────┐
+                     │   Database (SQLite   │
+                     │   or PostgreSQL)     │
+                     └──────────────────────┘
+```
+
+**Request flow:**
+1. Request hits Django's URL router → dispatched to a view or DRF ViewSet.
+2. JWT middleware authenticates the token; `AuditUserMiddleware` extracts the actor for signals.
+3. Business logic runs in the view/model layer.
+4. Django signals fire `post_save` / `post_delete` → `AuditLog` rows are written automatically.
+5. Response returned as HTML (web UI) or JSON (REST API).
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend framework** | Django 4.2 |
+| **REST API** | Django REST Framework 3.15 |
+| **Authentication** | `djangorestframework-simplejwt` (JWT) + Django sessions |
+| **Database** | SQLite (dev) / PostgreSQL (prod via `psycopg2-binary`) |
+| **PDF generation** | WeasyPrint 62 |
+| **Filtering / search** | `django-filter` 24 |
+| **Password hashing** | Argon2 (`django-argon2`) |
+| **Environment config** | `django-environ` |
+| **Production server** | Gunicorn |
+| **Containerisation** | Docker + Docker Compose |
+| **Test coverage** | `coverage.py` (79%) |
 
 ---
 
@@ -194,90 +252,90 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 The REST API is mounted at `/api/`. All endpoints require a valid **JWT Bearer token** unless stated otherwise.
 
+> **Full endpoint catalogue:** [`docs/api.md`](docs/api.md)
+
 ### Authentication
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/token/` | Obtain JWT access + refresh token |
-| `POST` | `/api/token/refresh/` | Refresh access token |
+| `POST` | `/api/token/refresh/` | Refresh an expired access token |
 
-**Example — obtain a token:**
 ```bash
+# Obtain token
 curl -X POST http://127.0.0.1:8000/api/token/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "your-password"}'
-```
+  -d '{"username": "admin", "password": "yourpass"}'
 
-Use the returned `access` token in subsequent requests:
-```bash
--H "Authorization: Bearer <access_token>"
+# Use the token
+curl http://127.0.0.1:8000/api/patients/ \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ---
 
-### Staff API (Doctor / Admin)
+### Staff API — Key Endpoints
 
-#### Patients
-
-| Method | Endpoint | Description |
+#### Patients `/api/patients/`
+| Method | Endpoint | Filters / Params |
 |---|---|---|
-| `GET` | `/api/patients/` | List all patients |
-| `POST` | `/api/patients/` | Create a new patient record |
-| `GET` | `/api/patients/{id}/` | Retrieve a specific patient |
-| `PUT` | `/api/patients/{id}/` | Update a patient record |
-| `DELETE` | `/api/patients/{id}/` | Delete a patient record |
+| `GET` | `/api/patients/` | `?search=` `?first_name=` `?blood_group=` `?ordering=` `?page=` `?page_size=` |
+| `POST` | `/api/patients/` | — |
+| `GET/PUT/DELETE` | `/api/patients/{id}/` | — |
 
-#### Appointments
-
-| Method | Endpoint | Description |
+#### Appointments `/api/appointments/`
+| Method | Endpoint | Note |
 |---|---|---|
-| `GET` | `/api/appointments/` | List all appointments |
-| `POST` | `/api/appointments/` | Create an appointment |
-| `GET` | `/api/appointments/{id}/` | Retrieve an appointment |
-| `PUT` | `/api/appointments/{id}/` | Update an appointment |
-| `DELETE` | `/api/appointments/{id}/` | Delete an appointment |
+| `GET` | `/api/appointments/` | `?status=` `?doctor_id=` `?date=` `?date_from=` `?date_to=` `?search=` |
+| `POST` | `/api/appointments/{id}/cancel/` | Body: `{"reason": "..."}` |
+| `POST` | `/api/appointments/{id}/reschedule/` | Body: `{"new_time": "<ISO8601>"}` |
 
-#### Prescriptions
-
-| Method | Endpoint | Description |
+#### Prescriptions `/api/prescriptions/`
+| Method | Endpoint | Note |
 |---|---|---|
-| `GET` | `/api/prescriptions/` | List all prescriptions |
-| `POST` | `/api/prescriptions/` | Create a prescription |
-| `GET` | `/api/prescriptions/{id}/` | Retrieve a prescription |
+| `GET` | `/api/prescriptions/` | `?patient_id=` `?doctor_id=` `?search=` |
+| `GET` | `/api/prescriptions/{id}/pdf/` | Returns `application/pdf` |
+| `GET` | `/api/prescriptions/{id}/html-preview/` | HTML preview for template debug |
 
-#### Invoices
-
-| Method | Endpoint | Description |
+#### Publications `/api/publications/`
+| Method | Endpoint | Auth |
 |---|---|---|
-| `GET` | `/api/invoices/` | List all invoices |
-| `POST` | `/api/invoices/` | Create an invoice |
-| `GET` | `/api/invoices/{id}/` | Retrieve an invoice |
-
-#### Publications
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/publications/` | List research publications |
-| `POST` | `/api/publications/` | Create a publication |
-| `GET` | `/api/publications/{id}/` | Retrieve a publication |
+| `GET` | `/api/publications/public-list/` | **None required** |
+| `POST` | `/api/publications/{id}/approve/` | Admin only |
+| `POST` | `/api/publications/{id}/reject/` | Admin only – body: `{"reason": "..."}` |
 
 ---
 
-### Patient-Facing API (`/api/patient/`)
+### Patient API `/api/patient/`
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/patient/profile/` | View own profile |
-| `GET` | `/api/patient/visits/` | List own visit history |
-| `GET` | `/api/patient/appointments/` | List own appointments |
-| `POST` | `/api/patient/appointments/` | Book an appointment |
-| `POST` | `/api/patient/appointments/{id}/reschedule/` | Reschedule an appointment |
-| `POST` | `/api/patient/appointments/{id}/cancel/` | Cancel an appointment |
-| `GET` | `/api/patient/prescriptions/` | List own prescriptions |
-| `GET` | `/api/patient/prescriptions/{id}/` | View a prescription |
-| `GET` | `/api/patient/invoices/` | List own invoices |
-| `GET` | `/api/patient/lab-reports/` | List own lab reports |
-| `POST` | `/api/patient/lab-reports/` | Upload a lab report |
+| `PATCH` | `/api/patient/profile/` | Update own profile |
+| `GET` | `/api/patient/visits/` | Visit history |
+| `GET/POST` | `/api/patient/appointments/` | List / book appointments |
+| `POST` | `/api/patient/appointments/{id}/reschedule/` | Reschedule |
+| `POST` | `/api/patient/appointments/{id}/cancel/` | Cancel |
+| `GET` | `/api/patient/prescriptions/` | List prescriptions |
+| `GET` | `/api/patient/invoices/` | List invoices |
+| `GET/POST` | `/api/patient/lab-reports/` | List / upload lab reports |
+
+---
+
+### Pagination Response Shape
+
+All list endpoints return paginated results:
+
+```json
+{
+  "count": 42,
+  "next": "http://127.0.0.1:8000/api/patients/?page=2",
+  "previous": null,
+  "results": [ ... ]
+}
+```
+
+Query params: `?page=<n>` · `?page_size=<n>` (max 100)
 
 ---
 
@@ -289,7 +347,12 @@ Use the returned `access` token in subsequent requests:
 | `/accounts/login/staff/` | Public | Staff / Doctor login |
 | `/accounts/login/patient/` | Public | Patient login |
 | `/accounts/signup/patient/` | Public | Patient self-registration |
-| `/appointments/book/` | Authenticated | Book appointment (patient) |
+| `/publications/` | Public | Approved research papers |
+| `/publications/<id>/` | Public | Paper detail with PDF download |
+| `/publications/submit/` | Doctor | Upload a research paper |
+| `/publications/my-papers/` | Doctor | Own paper status dashboard |
+| `/publications/review/` | Admin | Approval panel |
+| `/appointments/book/` | Patient | Book appointment |
 | `/appointments/doctor/` | Doctor | Doctor's appointment list |
 | `/billing/new/` | Doctor / Admin | Generate an invoice |
 | `/billing/my-invoices/` | Patient | Patient invoice portal |
@@ -299,13 +362,62 @@ Use the returned `access` token in subsequent requests:
 
 ---
 
-## 🧪 Running Tests
+## 🗄 Database Design
+
+ProClinic uses a single relational database. Below is the high-level entity map.
+
+```
+CustomUser
+  ├── [1:N] → Patient          (doctor creates, patient owns via user FK)
+  ├── [1:N] → Appointment      (as doctor or created_by)
+  ├── [1:N] → Prescription     (as doctor)
+  ├── [1:N] → Publication      (as doctor / approved_by)
+  └── [1:N] → AuditLog        (as actor)
+
+Patient
+  ├── [1:N] → Visit
+  ├── [1:N] → LabReport
+  ├── [1:N] → Appointment
+  ├── [1:N] → Prescription
+  └── [1:N] → Invoice
+
+Appointment
+  ├── [1:1] → Visit            (optional)
+  └── [1:1] → Invoice          (optional)
+
+Prescription
+  ├── [1:N] → PrescriptionItem
+  └── FK    → Visit            (optional)
+
+Invoice
+  └── [1:N] → InvoiceItem
+
+Publication
+  └── FK    → CustomUser (approved_by, nullable)
+
+AuditLog
+  └── FK    → CustomUser (actor, nullable)
+```
+
+> Full schema documentation: [`docs/models.md`](docs/models.md)
+
+---
+
+## 🧪 Running Tests & Coverage
+
+**Current coverage: 79%** (113 tests)
 
 ### Run All Tests
 
 ```bash
 cd backend
 python manage.py test
+```
+
+### Run the Extended Test Suite
+
+```bash
+python manage.py test api api.tests_extended
 ```
 
 ### Run Tests for a Specific App
@@ -430,6 +542,19 @@ python manage.py collectstatic
 3. Commit your changes (`git commit -m 'Add my feature'`)
 4. Push to the branch (`git push origin feature/my-feature`)
 5. Open a Pull Request
+
+---
+
+## 📚 Further Docs
+
+Detailed documentation lives in the [`docs/`](docs/) folder:
+
+| File | Contents |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | System design, layers, request flow, signal architecture |
+| [`docs/api.md`](docs/api.md) | Complete endpoint catalogue with request/response examples |
+| [`docs/models.md`](docs/models.md) | All models, fields, relationships, and lifecycle notes |
+| [`docs/workflow.md`](docs/workflow.md) | Step-by-step user flows: appointment, prescription, publication |
 
 ---
 
