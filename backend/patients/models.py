@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Patient(models.Model):
@@ -46,7 +47,7 @@ class Visit(models.Model):
         null=True, blank=True,
         related_name='visit',
     )
-    visit_date = models.DateTimeField()
+    visit_date = models.DateTimeField(default=timezone.now)
     notes = models.TextField(blank=True)
     diagnosis = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
