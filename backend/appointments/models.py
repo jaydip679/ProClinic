@@ -167,9 +167,10 @@ class Appointment(models.Model):
         ])
 
     def reschedule(self, new_time):
-        """Mark as rescheduled (old record) when a new appointment is created."""
+        """Move appointment to a new time and mark as RESCHEDULED."""
         self.status = 'RESCHEDULED'
-        self.save(update_fields=['status'])
+        self.scheduled_time = new_time
+        self.save(update_fields=['status', 'scheduled_time'])
 
     @property
     def is_cancellable(self):
