@@ -1,0 +1,789 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProClinic Design System + Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+</head>
+<body>
+  <main class="pc-container">
+    <section class="pc-section">
+      <p class="pc-chip pc-chip--confirmed">Hospital-grade UI Kit</p>
+      <h1 class="pc-h1" style="margin-top:10px;">ProClinic Frontend Design System</h1>
+      <p class="pc-muted" style="max-width:840px; margin-top:10px;">
+        Calm, clinical, trusted UI language for Admin, Doctor, Receptionist, Pharmacist, Accountant, and Patient.
+        Includes a component library, role dashboards (desktop/tablet/mobile variants), and an interactive prototype for core clinical flows.
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <a class="pc-btn pc-btn--primary" href="#prototype">Open Prototype</a>
+        <a class="pc-btn pc-btn--ghost" href="#components">View Components</a>
+        <a class="pc-btn pc-btn--ghost" href="{% url 'prototype_prescription_a4' %}" target="_blank" rel="noopener">Prescription A4</a>
+        <a class="pc-btn pc-btn--ghost" href="{% url 'prototype_invoice_a4' %}" target="_blank" rel="noopener">Invoice A4</a>
+      </div>
+    </section>
+
+    <section class="pc-section" id="tokens">
+      <h2 class="pc-h2">Design Tokens</h2>
+      <div class="pc-grid" style="margin-top:14px;">
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Color Palette</h3></div>
+          <div class="pc-card-body">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+              <div class="pc-alert pc-alert--success"><strong>#0CA789</strong><br>Primary Teal</div>
+              <div class="pc-alert" style="background:#e8ecff;border-color:#cfd8ff;color:#253f8f;"><strong>#2C3E91</strong><br>Secondary Indigo</div>
+              <div class="pc-alert pc-alert--warning"><strong>#FFD166</strong><br>Alert</div>
+              <div class="pc-alert pc-alert--danger"><strong>#E23E57</strong><br>Error</div>
+              <div class="pc-alert" style="background:#f7f9fb;border-color:#e0e7ef;color:#3b4f62;"><strong>#F7F9FB</strong><br>Background</div>
+              <div class="pc-alert" style="background:#edf1f5;border-color:#d4dce5;color:#546273;"><strong>#98A1B3</strong><br>Mid Neutral</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Type + Spacing Scale</h3></div>
+          <div class="pc-card-body">
+            <p style="font-size:36px;font-weight:700;margin:0;">H1 32-36px</p>
+            <p style="font-size:28px;font-weight:700;margin:6px 0 0;">H2 24-28px</p>
+            <p style="font-size:20px;font-weight:600;margin:6px 0 0;">H3 18-20px</p>
+            <p style="font-size:15px;line-height:1.4;margin-top:8px;">Body 14-16px with 1.4 line-height for clinical readability.</p>
+            <hr style="border:0;border-top:1px solid #e4ebf2;margin:14px 0;">
+            <p class="pc-muted" style="margin:0;">Spacing tokens: 8px / 16px / 24px / 32px. Tap targets: minimum 44px on mobile.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section" id="components">
+      <h2 class="pc-h2">Component Library</h2>
+      <div class="pc-grid" style="margin-top:14px;">
+        <article class="pc-card pc-col-12">
+          <div class="pc-card-head"><h3 class="pc-h3">Header + Sidebar</h3></div>
+          <div class="pc-card-body">
+            <div class="pc-app" style="min-height:320px; border:1px solid #e3eaf2; border-radius:16px; overflow:hidden;">
+              <aside class="pc-sidebar">
+                <div class="pc-brand">
+                  <span class="pc-brand-mark">P</span>
+                  <span>ProClinic</span>
+                </div>
+                <ul class="pc-nav">
+                  <li><a class="is-active" href="#"><span>Dashboard</span></a></li>
+                  <li><a href="#"><span>Appointments</span></a></li>
+                  <li><a href="#"><span>Patients</span></a></li>
+                  <li><a href="#"><span>Prescriptions</span></a></li>
+                  <li><a href="#"><span>Billing</span></a></li>
+                </ul>
+              </aside>
+              <div class="pc-main">
+                <header class="pc-header" style="position:static;">
+                  <div class="pc-header-inner">
+                    <div class="pc-search" role="search">
+                      <span aria-hidden="true">🔎</span>
+                      <input value="Search patient, appointment, invoice..." aria-label="Search">
+                    </div>
+                    <div class="pc-header-actions">
+                      <span class="pc-role-badge">Doctor</span>
+                      <button class="pc-btn pc-btn--ghost">Notifications</button>
+                      <span class="pc-avatar">AD</span>
+                    </div>
+                  </div>
+                </header>
+                <div style="padding:16px;" class="pc-muted">Role-aware menu hides unavailable actions, not just disables them.</div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Buttons + Chips + Alerts + Toasts</h3></div>
+          <div class="pc-card-body" style="display:grid;gap:12px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="pc-btn pc-btn--primary">Book appointment</button>
+              <button class="pc-btn pc-btn--secondary">Confirm appointment</button>
+              <button class="pc-btn pc-btn--ghost">Download prescription (PDF)</button>
+              <button class="pc-btn pc-btn--danger">Pay invoice</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="pc-chip pc-chip--scheduled" role="status">Scheduled</span>
+              <span class="pc-chip pc-chip--confirmed" role="status">Confirmed</span>
+              <span class="pc-chip pc-chip--completed" role="status">Completed</span>
+              <span class="pc-chip pc-chip--pending" role="status">Pending</span>
+              <span class="pc-chip pc-chip--paid" role="status">Paid</span>
+            </div>
+            <div class="pc-alert pc-alert--info">Appointment confirmed — email sent to patient@example.com</div>
+            <div class="pc-alert pc-alert--warning">Appointment conflict: this slot overlaps with another appointment. Choose an alternative.</div>
+            <div class="pc-alert pc-alert--danger">Allergy warning: Penicillin detected.</div>
+            <div class="pc-toast" style="position:static;max-width:420px;">Invoice created — GST (18%) applied.</div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Forms + Table + Calendar + Modal</h3></div>
+          <div class="pc-card-body">
+            <div class="pc-grid">
+              <div class="pc-col-6">
+                <label class="pc-label">Doctor</label>
+                <select class="pc-select" aria-label="Doctor">
+                  <option>Dr. A. Desai</option>
+                  <option>Dr. R. Shah</option>
+                </select>
+              </div>
+              <div class="pc-col-6">
+                <label class="pc-label">Visit Date/Time</label>
+                <input class="pc-input" type="datetime-local" value="2026-02-20T10:30" aria-label="Visit date and time">
+              </div>
+              <div class="pc-col-12">
+                <label class="pc-label">Visit Notes</label>
+                <textarea class="pc-textarea" aria-label="Visit Notes">Blood pressure stable. Continue current dosage.</textarea>
+              </div>
+              <div class="pc-col-12">
+                <label class="pc-label">Upload Document</label>
+                <input class="pc-input" type="file" aria-label="Upload file">
+              </div>
+            </div>
+
+            <div class="pc-card" style="margin-top:12px;">
+              <div class="pc-card-head"><h4 style="margin:0;">Medicine lines</h4><button class="pc-btn pc-btn--ghost" type="button">+ Add line</button></div>
+              <div class="pc-card-body" style="padding:0;">
+                <table class="pc-table" aria-label="Medicine line items">
+                  <thead><tr><th>Medicine</th><th>Dosage</th><th>Qty</th><th>Duration</th></tr></thead>
+                  <tbody>
+                    <tr><td>Paracetamol 500mg</td><td>1 tab TDS</td><td>15</td><td>5 days</td></tr>
+                    <tr><td>Vitamin C</td><td>1 tab OD</td><td>7</td><td>7 days</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="pc-table-wrap" style="margin-top:12px;">
+              <table class="pc-table" aria-label="Sortable appointment table">
+                <thead><tr><th>Patient ↕</th><th>Time ↕</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td>Nitin Sharma</td><td>10:30-11:00</td><td><span class="pc-chip pc-chip--confirmed" role="status">Confirmed</span></td><td><button class="pc-btn pc-btn--ghost">Start visit</button></td></tr>
+                  <tr><td>Priya Mehta</td><td>11:00-11:30</td><td><span class="pc-chip pc-chip--scheduled" role="status">Scheduled</span></td><td><button class="pc-btn pc-btn--ghost">Open</button></td></tr>
+                </tbody>
+              </table>
+              <div class="pc-pagination" aria-label="Pagination">
+                <button class="pc-page-btn" type="button">Prev</button>
+                <button class="pc-page-btn is-active" type="button">1</button>
+                <button class="pc-page-btn" type="button">2</button>
+                <button class="pc-page-btn" type="button">3</button>
+                <button class="pc-page-btn" type="button">Next</button>
+              </div>
+            </div>
+
+            <div class="pc-calendar" style="margin-top:12px;">
+              <div class="pc-calendar-grid">
+                <div class="pc-calendar-day">Mon</div><div class="pc-calendar-day">Tue</div><div class="pc-calendar-day">Wed</div><div class="pc-calendar-day">Thu</div><div class="pc-calendar-day">Fri</div><div class="pc-calendar-day">Sat</div><div class="pc-calendar-day">Sun</div>
+                <div class="pc-calendar-cell"><div class="pc-calendar-block pc-calendar-block--confirmed">Confirmed: Dr. Desai 10:30</div></div>
+                <div class="pc-calendar-cell"></div>
+                <div class="pc-calendar-cell"><div class="pc-calendar-block pc-calendar-block--pending">Pending: Quick-book slot</div></div>
+                <div class="pc-calendar-cell"></div>
+                <div class="pc-calendar-cell"><div class="pc-calendar-block pc-calendar-block--cancelled">Cancelled: Follow-up</div></div>
+                <div class="pc-calendar-cell"></div>
+                <div class="pc-calendar-cell"></div>
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <span class="pc-tooltip" tabindex="0">ⓘ Dosage helper
+                <span class="pc-tooltip-bubble" role="tooltip">Use frequency shorthand like 1-0-1 or TDS for clarity.</span>
+              </span>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-12">
+          <div class="pc-card-head"><h3 class="pc-h3">Icon Set (SVG Export)</h3><a class="pc-btn pc-btn--ghost" href="{% static 'proclinic/icons/proclinic-icons.svg' %}" download>Download SVG Sprite</a></div>
+          <div class="pc-card-body pc-icon-grid">
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-dashboard"></use></svg><small>dashboard</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-appointment"></use></svg><small>appointment</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-patient"></use></svg><small>patient</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-billing"></use></svg><small>billing</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-rx"></use></svg><small>prescription</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-alert"></use></svg><small>alert</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-settings"></use></svg><small>settings</small></div>
+            <div class="pc-icon-item"><svg><use href="{% static 'proclinic/icons/proclinic-icons.svg' %}#icon-help"></use></svg><small>helpdesk</small></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">Role Permission Matrix</h2>
+      <div class="pc-card" style="margin-top:14px;">
+        <div class="pc-card-body pc-table-wrap">
+          <table class="pc-table">
+            <thead><tr><th>Role</th><th>Visible Navigation/Actions</th><th>Hidden Actions</th></tr></thead>
+            <tbody>
+              <tr><td>Admin</td><td>Create doctor/receptionist/accountant accounts, assign roles, audit logs, approvals, system metrics</td><td>Patient-only support/pay actions</td></tr>
+              <tr><td>Doctor</td><td>Today queue, EHR, notes, prescription composer, availability/unavailability blocks</td><td>Role management, billing exports</td></tr>
+              <tr><td>Receptionist</td><td>Patient intake, quick book/check-in, demographics edits, draft non-GST invoice</td><td>Clinical note editing, audit controls, GST mark-paid controls</td></tr>
+              <tr><td>Pharmacist</td><td>Prescription queue, allergy banner, mark dispensed, PDF download</td><td>EHR edits, staff creation, invoice controls</td></tr>
+              <tr><td>Accountant</td><td>GST invoice creation, mark paid, receipts, reconciliation exports</td><td>Clinical fields, role assignment</td></tr>
+              <tr><td>Patient</td><td>Own summary, upcoming appointments, prescriptions, pay invoice, support ticket</td><td>All other patient records, admin/audit tools</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pc-alert pc-alert--info" style="margin-top:10px;">
+        Restricted URL behavior: show a friendly permission page with <strong>Request access</strong> CTA.
+        Preview: <a href="{% url 'permission_error' %}">Permission error screen</a>.
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">High-Fidelity Dashboard Screens (Desktop + Tablet + Mobile)</h2>
+      <p class="pc-muted" style="margin-top:8px;">Desktop target 1440px, tablet 768-1024px, mobile 375px. Each role keeps the same tokens but changes information density and CTAs.</p>
+      <div class="pc-role-grid" style="margin-top:14px;">
+        <article class="pc-card pc-role-card">
+          <div class="pc-card-head"><h3 class="pc-h3">Admin Command Center</h3><span class="pc-role-badge">Admin</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>System metrics cards (usage, uptime, daily logins)</li>
+              <li>Audit oversight table + destructive action review</li>
+              <li>Staff role management + bulk import CSV modal</li>
+              <li>Research approvals queue</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: full KPI + logs + staff panel</div>
+              <div class="pc-mini-screen">Tablet: collapsed sidebar, approvals prioritized</div>
+              <div class="pc-mini-screen">Mobile: alert-driven cards, quick role actions</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-role-card">
+          <div class="pc-card-head"><h3 class="pc-h3">Doctor Clinical Hub</h3><span class="pc-role-badge">Doctor</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Today's queue with large <strong>Start visit</strong> CTA</li>
+              <li>Upcoming appointments + past appointments split</li>
+              <li>Inline prescription composer with allergy guardrails</li>
+              <li>Availability / unavailability scheduler</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: queue + patient summary + notes</div>
+              <div class="pc-mini-screen">Tablet: quick open patient cards</div>
+              <div class="pc-mini-screen">Mobile: next-visit + availability blocks</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-role-card">
+          <div class="pc-card-head"><h3 class="pc-h3">Reception Fast Desk</h3><span class="pc-role-badge">Receptionist</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Compact patient intake form</li>
+              <li>Quick-book modal on calendar week/month</li>
+              <li>Check-in scanner/search with room assignment</li>
+              <li>Prominent CTAs: Create patient, Book slot</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: split schedule + intake</div>
+              <div class="pc-mini-screen">Tablet: rapid check-in shortcuts</div>
+              <div class="pc-mini-screen">Mobile: one-tap check-in + call queue</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-role-card">
+          <div class="pc-card-head"><h3 class="pc-h3">Pharmacist Dispense Queue</h3><span class="pc-role-badge">Pharmacist</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Prescription queue sorted by pending/priority</li>
+              <li>Allergy warning banner on selected prescription</li>
+              <li>Dispense modal with quantity controls</li>
+              <li>Download prescription PDF + history view</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: queue table + allergy panel</div>
+              <div class="pc-mini-screen">Tablet: dispense-first compact list</div>
+              <div class="pc-mini-screen">Mobile: high-contrast warning chips</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-role-card">
+          <div class="pc-card-head"><h3 class="pc-h3">Accounting Workspace</h3><span class="pc-role-badge">Accountant</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Line-item invoice builder with GST auto-calc</li>
+              <li>Payment reconciliation table</li>
+              <li>Unpaid invoice tracking + overdue highlights</li>
+              <li>Export CSV/PDF reports</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: dual-pane invoice + ledger</div>
+              <div class="pc-mini-screen">Tablet: create invoice first view</div>
+              <div class="pc-mini-screen">Mobile: payment capture + filters</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-role-card pc-patient-tone">
+          <div class="pc-card-head"><h3 class="pc-h3">Patient Friendly Portal</h3><span class="pc-role-badge">Patient</span></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Own EHR summary + past history + upcoming appointments</li>
+              <li>Download prescription button and invoice payment CTA</li>
+              <li>Support ticket + AI Help Desk modal</li>
+              <li>Larger CTAs and explanatory non-technical copy</li>
+            </ul>
+            <div class="pc-mini-grid" style="margin-top:12px;">
+              <div class="pc-mini-screen">Desktop: guided cards + helpers</div>
+              <div class="pc-mini-screen">Tablet: simplified two-column overview</div>
+              <div class="pc-mini-screen">Mobile: stacked cards, large actions</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">Key Screen Pack</h2>
+      <div class="pc-grid" style="margin-top:14px;">
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Public Entry Screens</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Landing, role selection, login, and forgot-password screens use the illustrative hero only on public pages.</p>
+            <div class="pc-mini-grid" style="margin-top:10px;">
+              <div class="pc-mini-screen">Landing with role cards</div>
+              <div class="pc-mini-screen">Role-aware login panel</div>
+              <div class="pc-mini-screen">Forgot password reset step</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Patient Profile Timeline</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">EHR timeline structure: demographics, allergies, vitals, notes, and documents with upcoming appointments pinned on top.</p>
+            <ul style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px;">
+              <li>Patient: Nitin Sharma | DOB 1998-08-12 | Blood group O+</li>
+              <li>Allergy flag card: Penicillin</li>
+              <li>Past medical history + upcoming appointments tabs</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Appointment Booking + Conflict UI</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Week/month calendar with quick-book modal and explicit overlap details with suggested alternatives.</p>
+            <div class="pc-alert pc-alert--warning" style="margin-top:10px;">Appointment conflict: this slot overlaps with another appointment. Choose an alternative.</div>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Prescription Composer</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Row-based medicine builder with + add line, quantity validation, allergy checks, and PDF export action.</p>
+            <p style="margin-top:8px;"><strong>Sample:</strong> Paracetamol 500mg - 1 tab TDS - 5 days.</p>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Billing & Invoice Generator</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Line-item builder with GST 18%, invoice preview PDF, and payment modal to mark paid.</p>
+            <p style="margin-top:8px;">Consultation ₹500 + Medicines ₹800 + GST ₹234 = <strong>₹1534</strong></p>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Research Upload + Approval</h3></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Doctor upload form: PDF + title + abstract + tags</li>
+              <li>Admin approval queue: Approve / Request changes / Reject</li>
+              <li>Status chips: Pending, Approved, Rework needed</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Audit Logs (Admin)</h3></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Chronological activity table with filters</li>
+              <li>Destructive actions open confirm modal with mandatory reason</li>
+              <li>Export logs to CSV for compliance review</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">AI Helpdesk (MVP)</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Contextual FAQ modal with canned responses and quick prompts for booking, billing, and prescription help.</p>
+          </div>
+        </article>
+
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Settings + User Profile</h3></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>User profile fields, password update, and notification preferences</li>
+              <li>Admin role settings and permission assignment matrix</li>
+              <li>Clinic branding and operational defaults</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section" id="prototype">
+      <h2 class="pc-h2">Interactive Prototype (Main Flows)</h2>
+      <p class="pc-muted" style="margin-top:8px;">Flow: login -> role dashboard -> booking conflict -> check-in -> doctor visit + Rx -> invoice -> payment -> audit confirmation.</p>
+
+      <div class="pc-proto-panel" style="margin-top:14px;">
+        <div class="pc-proto-toolbar">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong>Prototype role:</strong>
+            <span class="pc-role-badge" id="pc-role-preview">Receptionist</span>
+            <span class="pc-muted" id="pc-role-note">Reception role: quick booking and check-in actions are visible.</span>
+          </div>
+          <button class="pc-btn pc-btn--ghost" id="pc-reset-flow" type="button">Reset Flow</button>
+        </div>
+
+        <div class="pc-proto-screen">
+          <section class="pc-flow-step" data-step="login">
+            <h3 class="pc-h3">Role-based Login</h3>
+            <p class="pc-muted">Choose role -> land on role dashboard with only permitted actions shown.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+              <button class="pc-btn pc-btn--secondary" data-role-select="Admin" type="button">Admin</button>
+              <button class="pc-btn pc-btn--primary" data-role-select="Doctor" type="button">Doctor</button>
+              <button class="pc-btn pc-btn--ghost" data-role-select="Receptionist" type="button">Receptionist</button>
+              <button class="pc-btn pc-btn--ghost" data-role-select="Pharmacist" type="button">Pharmacist</button>
+              <button class="pc-btn pc-btn--ghost" data-role-select="Accountant" type="button">Accountant</button>
+              <button class="pc-btn pc-btn--ghost" data-role-select="Patient" type="button">Patient</button>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="dashboard">
+            <h3 class="pc-h3">Role Landing Dashboard</h3>
+            <div class="pc-grid" style="margin-top:10px;">
+              <article class="pc-card pc-col-4 pc-stat-primary"><div class="pc-card-body"><small>Today's appointments</small><div class="pc-stat-value">18</div></div></article>
+              <article class="pc-card pc-col-4 pc-stat-secondary"><div class="pc-card-body"><small>Pending prescriptions</small><div class="pc-stat-value">06</div></div></article>
+              <article class="pc-card pc-col-4 pc-stat-warning"><div class="pc-card-body"><small>Unpaid invoices</small><div class="pc-stat-value">12</div></div></article>
+            </div>
+            <div class="pc-action-row" style="margin-top:12px;">
+              <button class="pc-btn pc-btn--primary" id="pc-go-booking" type="button" data-roles="Receptionist,Patient,Admin">Book appointment</button>
+              <button class="pc-btn pc-btn--secondary" id="pc-go-checkin" type="button" data-roles="Receptionist">Check in patient</button>
+              <button class="pc-btn pc-btn--secondary" id="pc-go-doctor-visit" type="button" data-roles="Doctor">Start doctor visit</button>
+              <button class="pc-btn pc-btn--secondary" id="pc-go-invoice" type="button" data-roles="Accountant,Admin">Create invoice</button>
+              <button class="pc-btn pc-btn--ghost" id="pc-go-audit" type="button" data-roles="Admin">Open audit review</button>
+              <button class="pc-btn pc-btn--ghost" id="pc-open-helpdesk" type="button" data-roles="Patient,Receptionist">AI Help Desk</button>
+              <button class="pc-btn pc-btn--ghost" id="pc-simulate-restricted" type="button">Try restricted URL</button>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="booking">
+            <h3 class="pc-h3">Appointment Booking Flow</h3>
+            <p class="pc-muted">Conflict rule: <span class="pc-kbd">start_time &lt; existing_end AND end_time &gt; existing_start</span></p>
+            <form id="pc-booking-form" style="margin-top:10px;max-width:760px;">
+              <div class="pc-grid">
+                <div class="pc-col-6">
+                  <label class="pc-label">Doctor</label>
+                  <select class="pc-select" id="pc-book-doctor">
+                    <option>Dr. A. Desai</option>
+                  </select>
+                </div>
+                <div class="pc-col-6">
+                  <label class="pc-label">Patient</label>
+                  <input class="pc-input" id="pc-book-patient" value="Nitin Sharma" />
+                </div>
+                <div class="pc-col-6">
+                  <label class="pc-label">Start time</label>
+                  <input class="pc-input" id="pc-book-start" type="datetime-local" value="2026-02-20T10:15" />
+                </div>
+                <div class="pc-col-6">
+                  <label class="pc-label">End time</label>
+                  <input class="pc-input" id="pc-book-end" type="datetime-local" value="2026-02-20T10:45" />
+                </div>
+              </div>
+              <p id="pc-booking-error" class="pc-inline-error" role="alert" style="display:none;"></p>
+              <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="pc-btn pc-btn--primary" type="submit">Check & Confirm</button>
+                <button class="pc-btn pc-btn--ghost" type="button" id="pc-cancel-booking">Cancel</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="pc-flow-step" data-step="checkin">
+            <h3 class="pc-h3">Reception Check-in</h3>
+            <p class="pc-muted">Scan ID or search patient -> quick check-in toast with room assignment.</p>
+            <div class="pc-card" style="margin-top:10px;max-width:720px;">
+              <div class="pc-card-body">
+                <div class="pc-grid">
+                  <div class="pc-col-6">
+                    <label class="pc-label">Patient ID / Name</label>
+                    <input class="pc-input" id="pc-checkin-patient" value="Nitin Sharma" />
+                  </div>
+                  <div class="pc-col-6">
+                    <label class="pc-label">Room assignment</label>
+                    <select class="pc-select" id="pc-checkin-room">
+                      <option>Room 3B</option>
+                      <option>Room 4A</option>
+                      <option>Room 5C</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="pc-btn pc-btn--primary" id="pc-checkin-submit" type="button" style="margin-top:10px;">Check in now</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="doctor-visit">
+            <h3 class="pc-h3">Doctor Visit + Prescription Composer</h3>
+            <div class="pc-alert pc-alert--warning" style="margin-top:10px;">Allergy flag: <strong>Penicillin</strong> (Nitin Sharma)</div>
+            <div class="pc-card" style="margin-top:10px;">
+              <div class="pc-card-head"><h4 style="margin:0;">Medicine plan</h4><button class="pc-btn pc-btn--ghost" id="pc-proto-add-medicine" type="button">+ Add medicine</button></div>
+              <div class="pc-card-body">
+                <table class="pc-table">
+                  <thead><tr><th>Medicine</th><th>Dosage</th><th>Quantity</th><th>Instructions</th><th>Duration</th></tr></thead>
+                  <tbody id="pc-proto-medicine-body">
+                    <tr>
+                      <td><input class="pc-input" value="Paracetamol 500mg"></td>
+                      <td><input class="pc-input" value="500mg"></td>
+                      <td><input class="pc-input pc-qty" type="number" min="1" value="15"></td>
+                      <td><input class="pc-input" value="1 tab TDS"></td>
+                      <td><input class="pc-input" value="5 days"></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                  <input type="checkbox" id="pc-allergy-flag"> Severe allergy warning (simulate hard stop)
+                </label>
+                <button class="pc-btn pc-btn--primary" id="pc-save-prescription" type="button" style="margin-top:10px;">Save prescription</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="invoice">
+            <h3 class="pc-h3">Billing + GST Calculation</h3>
+            <div class="pc-card" style="margin-top:10px;max-width:560px;">
+              <div class="pc-card-body">
+                <ul id="pc-line-items" style="margin:0;padding-left:18px;display:grid;gap:8px;"></ul>
+                <div style="display:flex;justify-content:space-between;margin-top:12px;"><span>GST (18%)</span><strong id="pc-gst">₹234</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:18px;"><span>Total</span><strong id="pc-grand-total">₹1534</strong></div>
+                <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+                  <button class="pc-btn pc-btn--ghost" id="pc-preview-invoice" type="button">Preview PDF</button>
+                  <button class="pc-btn pc-btn--secondary" id="pc-create-invoice" type="button">Create invoice</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="payment">
+            <h3 class="pc-h3">Payment Modal Simulation</h3>
+            <div class="pc-card" style="margin-top:10px;max-width:560px;">
+              <div class="pc-card-body">
+                <p>Invoice <strong>#PC-2045</strong> ready. Card/UPI accepted.</p>
+                <button class="pc-btn pc-btn--primary" id="pc-pay-now" type="button">Mark paid</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pc-flow-step" data-step="audit">
+            <h3 class="pc-h3">Audit Confirmation Workflow</h3>
+            <p class="pc-muted">Destructive actions require confirmation + reason to create an audit entry.</p>
+            <div class="pc-card" style="margin-top:10px;max-width:720px;">
+              <div class="pc-card-body">
+                <p><strong>Action:</strong> Delete attached lab document for Nitin Sharma</p>
+                <button class="pc-btn pc-btn--danger" id="pc-open-audit-confirm" type="button">Delete document</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">Printable Templates (A4)</h2>
+      <div class="pc-grid" style="margin-top:14px;">
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Prescription PDF</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Sample medicine: Paracetamol 500mg — 1 tab TDS — 5 days.</p>
+            <a class="pc-btn pc-btn--primary" href="{% url 'prototype_prescription_a4' %}" target="_blank" rel="noopener">Open A4 Prescription</a>
+          </div>
+        </article>
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Invoice PDF</h3></div>
+          <div class="pc-card-body">
+            <p class="pc-muted">Consultation ₹500 + Medicines ₹800 + GST 18% ₹234 = ₹1534.</p>
+            <a class="pc-btn pc-btn--secondary" href="{% url 'prototype_invoice_a4' %}" target="_blank" rel="noopener">Open A4 Invoice</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">Accessibility & QA</h2>
+      <div class="pc-grid" style="margin-top:14px;">
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Contrast Checker Snapshots</h3></div>
+          <div class="pc-card-body">
+            <table class="pc-table" style="min-width:0;">
+              <thead><tr><th>Foreground / Background</th><th>Ratio</th><th>WCAG AA</th></tr></thead>
+              <tbody>
+                <tr><td>#FFFFFF on #087A66 (Primary button)</td><td>5.26:1</td><td>Pass</td></tr>
+                <tr><td>#FFFFFF on #2C3E91 (Secondary button)</td><td>9.52:1</td><td>Pass</td></tr>
+                <tr><td>#24323B on #F7F9FB (Body text)</td><td>12.48:1</td><td>Pass</td></tr>
+                <tr><td>#0B6E59 on #DAF7F0 (Confirmed chip)</td><td>5.47:1</td><td>Pass</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article class="pc-card pc-col-6">
+          <div class="pc-card-head"><h3 class="pc-h3">Keyboard + ARIA</h3></div>
+          <div class="pc-card-body">
+            <ul style="margin:0;padding-left:18px;display:grid;gap:6px;">
+              <li>Keyboard flow covered: login, book appointment, create prescription.</li>
+              <li>Focus outlines visible on all controls (buttons, inputs, links, chips).</li>
+              <li>Modal dialogs use <code>role="dialog"</code>, <code>aria-modal="true"</code>, and labelled headings.</li>
+              <li>Inline errors use <code>role="alert"</code>; status chips expose readable labels.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <h2 class="pc-h2">Developer Handoff</h2>
+      <div class="pc-card" style="margin-top:14px;">
+        <div class="pc-card-body">
+          <h3 class="pc-h3" style="margin-bottom:8px;">CSS Variables</h3>
+          <pre style="background:#101a23;color:#d3f4ec;padding:12px;border-radius:12px;overflow:auto;">:root {
+  --pc-color-primary: #0CA789;
+  --pc-color-primary-strong: #087A66;
+  --pc-color-secondary: #2C3E91;
+  --pc-color-alert: #FFD166;
+  --pc-color-danger: #E23E57;
+  --pc-color-bg: #F7F9FB;
+  --pc-color-mid: #98A1B3;
+  --pc-color-dark: #24323B;
+  --pc-space-2: 8px;
+  --pc-space-4: 16px;
+  --pc-space-5: 24px;
+  --pc-space-6: 32px;
+}</pre>
+
+          <h3 class="pc-h3" style="margin:14px 0 8px;">Sample JSON Contracts</h3>
+          <pre style="background:#101a23;color:#dbe6ff;padding:12px;border-radius:12px;overflow:auto;">{
+  "patient": {
+    "id": "PAT-920",
+    "name": "Nitin Sharma",
+    "dob": "1998-08-12",
+    "blood_group": "O+",
+    "allergies": ["Penicillin"]
+  },
+  "appointment": {
+    "id": "APT-1007",
+    "doctor": "Dr. A. Desai",
+    "start_time": "2026-02-20T10:30:00Z",
+    "end_time": "2026-02-20T11:00:00Z",
+    "status": "Confirmed"
+  },
+  "prescription": {
+    "id": "RX-311",
+    "lines": [{
+      "medicine": "Paracetamol 500mg",
+      "dosage": "1 tab TDS",
+      "duration": "5 days"
+    }]
+  },
+  "invoice": {
+    "id": "INV-557",
+    "items": [
+      {"label": "Consultation", "amount": 500},
+      {"label": "Medicines", "amount": 800}
+    ],
+    "gst_percent": 18,
+    "gst_amount": 234,
+    "total": 1534
+  }
+}</pre>
+
+          <h3 class="pc-h3" style="margin:14px 0 8px;">Endpoint Samples</h3>
+          <pre style="background:#101a23;color:#e8efff;padding:12px;border-radius:12px;overflow:auto;">GET    /api/patients/
+GET    /api/appointments/
+POST   /appointments/book/
+POST   /prescriptions/add/
+POST   /billing/new/
+GET    /audit/logs/
+POST   /publications/submit/
+GET    /design-system/
+GET    /permission-denied/</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="pc-modal-backdrop" id="pc-conflict-modal" role="dialog" aria-modal="true" aria-labelledby="pc-conflict-title">
+    <div class="pc-modal">
+      <div class="pc-modal-head">
+        <h3 id="pc-conflict-title" class="pc-h3">Scheduling conflict</h3>
+      </div>
+      <div class="pc-modal-body">
+        <p id="pc-conflict-message">Appointment conflict: this slot overlaps with another appointment. Choose an alternative.</p>
+        <ul id="pc-overlap-list" style="margin-top:8px;padding-left:18px;"></ul>
+        <h4 style="margin:12px 0 8px;">Suggest next available</h4>
+        <div id="pc-suggestion-list" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="pc-modal-foot">
+        <button class="pc-btn pc-btn--ghost" id="pc-close-modal" type="button">Cancel</button>
+        <button class="pc-btn pc-btn--secondary" id="pc-confirm-slot" type="button">Confirm different slot</button>
+        <button class="pc-btn pc-btn--secondary" id="pc-request-override" type="button">Request override (Admin only)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc-modal-backdrop" id="pc-audit-modal" role="dialog" aria-modal="true" aria-labelledby="pc-audit-title">
+    <div class="pc-modal" style="max-width:560px;">
+      <div class="pc-modal-head">
+        <h3 id="pc-audit-title" class="pc-h3">Confirm destructive action</h3>
+      </div>
+      <div class="pc-modal-body">
+        <p>Provide reason before deleting this document. This will create an audit log record.</p>
+        <label class="pc-label" for="pc-audit-reason">Reason</label>
+        <textarea class="pc-textarea" id="pc-audit-reason" placeholder="Example: Duplicate scan uploaded by mistake"></textarea>
+        <p class="pc-inline-error" id="pc-audit-error" role="alert" style="display:none;"></p>
+      </div>
+      <div class="pc-modal-foot">
+        <button class="pc-btn pc-btn--ghost" id="pc-cancel-audit" type="button">Cancel</button>
+        <button class="pc-btn pc-btn--danger" id="pc-confirm-audit" type="button">Delete and log reason</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc-modal-backdrop" id="pc-helpdesk-modal" role="dialog" aria-modal="true" aria-labelledby="pc-helpdesk-title">
+    <div class="pc-modal" style="max-width:680px;">
+      <div class="pc-modal-head" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="pc-helpdesk-title" class="pc-h3">AI Help Desk (MVP)</h3>
+        <button class="pc-btn pc-btn--ghost" id="pc-close-helpdesk" type="button">Close</button>
+      </div>
+      <div class="pc-modal-body">
+        <div class="pc-chat-log" id="pc-helpdesk-log" aria-live="polite"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button class="pc-btn pc-btn--ghost pc-helpdesk-suggest" type="button" data-prompt="How do I reschedule my appointment?">Reschedule appointment</button>
+          <button class="pc-btn pc-btn--ghost pc-helpdesk-suggest" type="button" data-prompt="Show invoice payment options">Invoice payment</button>
+          <button class="pc-btn pc-btn--ghost pc-helpdesk-suggest" type="button" data-prompt="Where can I download my prescription PDF?">Download prescription</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input class="pc-input" id="pc-helpdesk-input" placeholder="Ask a clinic or system question..." aria-label="Helpdesk question">
+          <button class="pc-btn pc-btn--primary" id="pc-helpdesk-send" type="button">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc-toast-stack" id="pc-toast-stack" aria-live="polite"></div>
+  <script src="{% static 'proclinic/js/prototype.js' %}"></script>
+</body>
+</html>

@@ -3,52 +3,73 @@
 {% block title %}Doctor Profile{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Doctor Profile</h5>
-                </div>
-                <div class="card-body">
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
-                    {% endif %}
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First name</label>
-                                {{ form.first_name }}
-                                {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last name</label>
-                                {{ form.last_name }}
-                                {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                                {{ form.email }}
-                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone number</label>
-                                {{ form.phone_number }}
-                                {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors|striptags }}</div>{% endif %}
-                            </div>
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-6);">
+        <h2 class="pc-h2" style="margin: 0;">Doctor Profile</h2>
+        <p class="pc-muted" style="margin-top: 4px;">Update your professional details and contact information.</p>
+    </div>
+
+    <div class="pc-card" style="max-width: 800px; box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+        <div class="pc-card-head" style="padding: 24px; border-bottom-color: #f0f4f8; background: linear-gradient(to right, #f2faf8, #fff);">
+            <strong style="color: #1a322c; font-size: 16px; letter-spacing: -0.2px;">Personal Information</strong>
+        </div>
+        <div class="pc-card-body" style="padding: 32px 24px;">
+            {% if form.non_field_errors %}
+                <div class="pc-alert pc-alert--danger" style="margin-bottom: 24px;">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <form method="post" novalidate id="doctorProfileForm">
+                {% csrf_token %}
+                <div class="pc-grid" style="margin-bottom: 24px; gap: 24px;">
+                    <div class="pc-col-6">
+                        <div class="pc-form-row" style="margin: 0;">
+                            <label for="{{ form.first_name.id_for_label }}" class="pc-label" style="font-size: 13px;">First name</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<div class="pc-inline-error">{{ form.first_name.errors|striptags }}</div>{% endif %}
                         </div>
-                        <button type="submit" class="btn btn-primary mt-4">Save Profile</button>
-                    </form>
+                    </div>
+                    <div class="pc-col-6">
+                        <div class="pc-form-row" style="margin: 0;">
+                            <label for="{{ form.last_name.id_for_label }}" class="pc-label" style="font-size: 13px;">Last name</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}<div class="pc-inline-error">{{ form.last_name.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="pc-form-row" style="margin-bottom: 24px;">
+                    <label for="{{ form.email.id_for_label }}" class="pc-label" style="font-size: 13px;">Email address</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<div class="pc-inline-error">{{ form.email.errors|striptags }}</div>{% endif %}
+                </div>
+                
+                <div class="pc-form-row" style="margin-bottom: 32px;">
+                    <label for="{{ form.phone_number.id_for_label }}" class="pc-label" style="font-size: 13px;">Phone number</label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}<div class="pc-inline-error">{{ form.phone_number.errors|striptags }}</div>{% endif %}
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 24px; border-top: 1px solid #f0f4f8;">
+                    <button type="submit" class="pc-btn pc-btn--primary" style="padding: 10px 24px; border-radius: 8px;">Save Profile Updates</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
-    document.querySelectorAll("input").forEach(function (el) {
-        el.classList.add("form-control");
+    document.addEventListener('DOMContentLoaded', () => {
+        const formFields = document.querySelectorAll('input, select, textarea');
+        formFields.forEach(field => {
+            if (field.type === 'hidden' || field.type === 'submit') return;
+            if (field.tagName === 'SELECT') {
+                field.classList.add('pc-select');
+            } else if (field.tagName === 'TEXTAREA') {
+                field.classList.add('pc-textarea');
+            } else {
+                if (!field.classList.contains('pc-input')) field.classList.add('pc-input');
+            }
+        });
+        if (typeof feather !== 'undefined') feather.replace();
     });
 </script>
 {% endblock %}

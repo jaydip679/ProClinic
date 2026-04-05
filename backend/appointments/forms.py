@@ -66,23 +66,48 @@ class AppointmentForm(forms.ModelForm):
         doctor = cleaned_data.get('doctor')
         scheduled_time = cleaned_data.get('scheduled_time')
 
+        is_override = self.data.get('override_conflict') == 'true'
+        allow_override = self.request_user and self.request_user.role in ['ADMIN', 'RECEPTIONIST']
+        should_override = is_override and allow_override
+        if should_override:
+            self.instance.override_conflict = True
+
+        if scheduled_time:
+            # 1. Prevent past bookings
+            if scheduled_time < timezone.now():
+                self.add_error('scheduled_time', 'You cannot book appointments in the past.')
+
         if doctor and scheduled_time:
-            is_doctor_busy = Appointment.objects.filter(
-                doctor=doctor,
+            if not should_override:
+                # 2. Prevent overlapping for doctor
+                is_doctor_busy = Appointment.objects.filter(
+                    doctor=doctor,
+                    scheduled_time=scheduled_time,
+                    status='SCHEDULED',
+                ).exclude(pk=self.instance.pk).exists()
+                if is_doctor_busy:
+                    self.add_error('doctor', 'Selected doctor is not available at this time.')
+
+                # 3. Prevent doctor unavailabilty override
+                is_doctor_blocked = DoctorUnavailability.objects.filter(
+                    doctor=doctor,
+                    start_time__lte=scheduled_time,
+                    end_time__gt=scheduled_time,
+                ).exists()
+                if is_doctor_blocked:
+                    self.add_error('scheduled_time', 'Doctor has marked this time as unavailable.')
+
+        # 4. Prevent patient overlapping double-bookings
+        if self.patient_profile and scheduled_time:
+            is_patient_busy = Appointment.objects.filter(
+                patient=self.patient_profile,
                 scheduled_time=scheduled_time,
                 status='SCHEDULED',
             ).exclude(pk=self.instance.pk).exists()
-            if is_doctor_busy:
-                self.add_error('doctor', 'Selected doctor is not available at this time.')
+            if is_patient_busy:
+                self.add_error('scheduled_time', 'You already have an appointment scheduled at this exact time.')
 
-            is_doctor_blocked = DoctorUnavailability.objects.filter(
-                doctor=doctor,
-                start_time__lte=scheduled_time,
-                end_time__gt=scheduled_time,
-            ).exists()
-            if is_doctor_blocked:
-                self.add_error('scheduled_time', 'Doctor has marked this time as unavailable.')
-
+        # 5. Missing profile catch
         if (
             self.request_user
             and self.request_user.role == 'PATIENT'

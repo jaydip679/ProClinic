@@ -66,6 +66,7 @@ def patient_signup(request):
                 user.phone_number = form.cleaned_data.get('phone_number')
                 user.save()
                 Patient.objects.create(
+                    user=user,
                     first_name=form.cleaned_data['first_name'],
                     last_name=form.cleaned_data['last_name'],
                     date_of_birth=form.cleaned_data['date_of_birth'],
@@ -109,11 +110,18 @@ def patient_profile(request):
     if request.user.role != 'PATIENT':
         return redirect('dashboard')
 
-    profile = Patient.objects.filter(
-        Q(email=request.user.email)
-        | Q(contact_number=request.user.phone_number)
-        | Q(contact_number=request.user.username)
-    ).first()
+    # Direct FK lookup first, then legacy email/phone fallback
+    profile = getattr(request.user, 'patient_profile', None)
+    if profile is None:
+        profile = Patient.objects.filter(
+            Q(email=request.user.email)
+            | Q(contact_number=request.user.phone_number)
+            | Q(contact_number=request.user.username)
+        ).first()
+        # Repair FK for future lookups
+        if profile and profile.user_id is None:
+            profile.user = request.user
+            profile.save(update_fields=['user'])
 
     initial_profile_data = {}
     if not profile:

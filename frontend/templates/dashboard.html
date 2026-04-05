@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pc-section">
+    <div class="pc-hero" style="margin-bottom: var(--pc-space-5);">
+        <h1 class="pc-h1" style="font-weight: 700;">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+        <p class="pc-muted" style="margin-top: 4px;">{{ today }} &middot; ProClinic System</p>
+    </div>
+
+    <!-- Dynamic Dashboard Router based on Role -->
+    {% if user.role == 'ADMIN' %}
+        {% include "dashboards/admin.html" %}
+    {% elif user.role == 'DOCTOR' %}
+        {% include "dashboards/doctor.html" %}
+    {% elif user.role == 'RECEPTIONIST' %}
+        {% include "dashboards/receptionist.html" %}
+    {% elif user.role == 'PATIENT' %}
+        {% include "dashboards/patient.html" %}
+    {% elif user.role == 'ACCOUNTANT' %}
+        {% include "dashboards/accountant.html" %}
+    {% elif user.role == 'PHARMACIST' %}
+        {% include "dashboards/pharmacist.html" %}
+    {% else %}
+        <div class="pc-alert pc-alert--info" style="display: flex; gap: 8px; align-items: flex-start;">
+            <i data-feather="info" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+            <div>
+                <strong>No Dashboard Assigned</strong>
+                <div class="pc-help">Your account role does not have a specific dashboard configured yet.</div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <h2 class="pc-h2" style="margin: 0;">My Medical Bills</h2>
+        <p class="pc-muted" style="margin-top: 4px;">View your past and pending invoices. For payment, please visit the hospital reception.</p>
+    </div>
+
+    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
+                <thead style="background-color: #f7fafc;">
+                    <tr>
+                        <th style="padding: 16px 24px;">Date</th>
+                        <th style="padding: 16px 14px;">Services Included</th>
+                        <th style="padding: 16px 14px;">Amount</th>
+                        <th style="padding: 16px 14px;">Status</th>
+                        <th style="padding: 16px 24px; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td style="font-weight: 500; padding: 20px 24px; color: #37485a;">
+                            {{ invoice.created_at|date:"M d, Y" }}
+                        </td>
+                        <td style="padding: 20px 14px;">
+                            <ul style="margin: 0; padding-left: 16px; color: #596578; font-size: 13px;">
+                                {% for item in invoice.items.all %}
+                                <li>{{ item.service_name }} (x{{ item.quantity }})</li>
+                                {% empty %}
+                                <li>Standard Consultation</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td style="padding: 20px 14px; font-weight: 600; color: #1a322c;">
+                            &#8377;{{ invoice.total_amount }}
+                        </td>
+                        <td style="padding: 20px 14px;">
+                            {% if invoice.status == 'PAID' %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Paid</span>
+                            {% elif invoice.status == 'PARTIAL' %}
+                                <span class="pc-chip pc-chip--pending" style="padding: 6px 12px;">Partial</span>
+                            {% else %}
+                                <span class="pc-chip pc-chip--danger" style="padding: 6px 12px; background: #ffebeb; color: #d63c3c;">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 20px 24px; text-align: right;">
+                            {% if invoice.status != 'PAID' %}
+                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                    <button class="pc-btn pc-btn--primary" style="padding: 6px 12px; min-height: 32px; font-size: 12px; cursor: default;" title="Please visit the hospital reception to pay in cash.">Pay at Hospital</button>
+                                    <button class="pc-btn pc-btn--ghost" disabled style="padding: 6px 12px; min-height: 32px; font-size: 12px; cursor: not-allowed;" title="Online payment is currently not available. Please pay at the hospital.">Pay Online</button>
+                                </div>
+                            {% else %}
+                                <span style="font-size: 13px; color: #98a1b3;">No Action Required</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                            <div style="font-size: 15px; margin-bottom: 8px; font-weight: 500;">No invoices found.</div>
+                            <div style="font-size: 14px; font-weight: normal;">You're all caught up! Generated bills will appear here.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

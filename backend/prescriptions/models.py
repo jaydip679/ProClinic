@@ -1,22 +1,58 @@
 from django.db import models
 from django.conf import settings
-from patients.models import Patient
+from patients.models import Patient, Visit
 from appointments.models import Appointment
 
+
 class Prescription(models.Model):
-    # Link to patient and the specific appointment (visit)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='prescriptions')
-    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE, related_name='prescription')
-    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    
-    notes = models.TextField(blank=True, help_text="General advice or clinical notes")
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    # Placeholder for the generated PDF file mentioned in the PRD
+    """
+    A prescription issued by a doctor during a clinical visit.
+
+    The Visit model is the canonical holder of diagnosis and clinical notes.
+    Prescription stores the medication plan that results from that visit.
+    """
+    # Primary clinical link — every prescription belongs to a Visit
+    visit = models.ForeignKey(
+        Visit,
+        on_delete=models.CASCADE,
+        related_name='prescriptions',
+        null=True,
+        blank=True,
+        help_text="The clinical visit during which this prescription was issued.",
+    )
+
+    # Denormalised convenience fields (derived from Visit but kept for fast queries)
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='prescriptions',
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='prescriptions_written',
+    )
+
+    # Kept nullable for backward-compat; new prescriptions link via visit instead
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.SET_NULL,
+        related_name='prescription',
+        null=True,
+        blank=True,
+    )
+
+    # PDF export
     pdf_file = models.FileField(upload_to='prescriptions/pdfs/', blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Prescription for {self.patient} - {self.created_at.date()}"
+
 
 class PrescriptionItem(models.Model):
     prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='items')

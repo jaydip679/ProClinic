@@ -24,4 +24,6 @@ urlpatterns = [
     # JWT Auth Endpoints
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # Patient-facing endpoints
+    path('patient/', include('api.patient_urls')),
 ]

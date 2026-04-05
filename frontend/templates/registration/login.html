@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProClinic Auth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .pc-login-wrap {
+            min-height: 100vh;
+            display: flex;
+            background: linear-gradient(135deg, #f7f9fb 0%, #eef3f8 100%);
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .pc-login-card {
+            background: #fff;
+            width: 100%;
+            max-width: 440px;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(10, 31, 54, 0.08);
+            border: 1px solid #e1e9f0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .pc-login-head {
+            padding: 40px 40px 20px;
+            text-align: center;
+        }
+        .pc-login-body {
+            padding: 0 40px 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="pc-login-wrap">
+        <div class="pc-login-card">
+            <div class="pc-login-head">
+                <div class="pc-brand-mark" style="margin: 0 auto 16px; width: 48px; height: 48px; font-size: 18px; border-radius: 12px;">PC</div>
+                <h1 class="pc-h2" style="margin: 0 0 8px; color: #1c2b36;">Welcome Back</h1>
+                <p class="pc-muted" style="margin: 0; font-size: 15px;">Sign in to your ProClinic workspace</p>
+            </div>
+            
+            <div class="pc-login-body">
+                {% if form.errors %}
+                    <div class="pc-alert pc-alert--danger" style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+                        <i data-feather="alert-circle" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                        <span style="font-size: 14px; font-weight: 500;">Invalid username or password.</span>
+                    </div>
+                {% endif %}
+
+                {% if next %}
+                    {% if user.is_authenticated %}
+                        <div class="pc-alert pc-alert--warning" style="margin-bottom: 24px; display: flex; align-items: start; gap: 8px;">
+                            <i data-feather="lock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                            <span style="font-size: 13px;">Your account does not have access to that page.</span>
+                        </div>
+                    {% else %}
+                        <div class="pc-alert pc-alert--info" style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+                            <i data-feather="info" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                            <span style="font-size: 13px;">Please log in to continue.</span>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="pc-form-row" style="margin-bottom: 20px;">
+                        <label for="id_username" class="pc-label">Username</label>
+                        <input type="text" name="username" id="id_username" class="pc-input" autocomplete="username" required placeholder="Enter your username">
+                    </div>
+                    <div class="pc-form-row" style="margin-bottom: 32px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <label for="id_password" class="pc-label" style="margin-bottom: 6px;">Password</label>
+                        </div>
+                        <input type="password" name="password" id="id_password" class="pc-input" autocomplete="current-password" required placeholder="••••••••">
+                    </div>
+                    <input type="hidden" name="next" value="{{ next|default:'' }}">
+                    <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%; font-size: 15px; padding: 12px; border-radius: 10px;">
+                        Sign In <i data-feather="arrow-right" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    
+                    <div style="text-align: center; margin-top: 24px;">
+                        <a href="#" class="pc-muted" style="font-size: 13px; font-weight: 500; text-decoration: none;">Trouble signing in?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

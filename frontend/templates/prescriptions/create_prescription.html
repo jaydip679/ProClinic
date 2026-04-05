@@ -1,41 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <form method="post">
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <h2 class="pc-h2" style="margin: 0;">New Prescription</h2>
+        <p class="pc-muted" style="margin-top: 4px;">Compose a new prescription for a patient</p>
+    </div>
+
+    <form method="post" id="rxForm">
         {% csrf_token %}
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-dark text-white"><h4>New Prescription</h4></div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">{{ form.patient.label_tag }} {{ form.patient }}</div>
-                    <div class="col-md-6">{{ form.appointment.label_tag }} {{ form.appointment }}</div>
+        <div class="pc-card" style="margin-bottom: var(--pc-space-5);">
+            <div class="pc-card-head" style="background: linear-gradient(135deg, #1e2f39, #24323b);">
+                <span style="color: #fff; font-weight: 600;">Prescription Context</span>
+            </div>
+            <div class="pc-card-body">
+                <div class="pc-grid">
+                    <div class="pc-col-6">
+                        <div class="pc-form-row">
+                            <label class="pc-label">{{ form.patient.label }}</label>
+                            {{ form.patient }}
+                        </div>
+                    </div>
+                    <div class="pc-col-6">
+                        <div class="pc-form-row">
+                            <label class="pc-label">{{ form.appointment.label }}</label>
+                            {{ form.appointment }}
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-3">{{ form.notes.label_tag }} {{ form.notes }}</div>
+                <div class="pc-form-row" style="margin-top: 16px;">
+                    <label class="pc-label">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                </div>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-light"><h5>Medicines</h5></div>
-            <div class="card-body">
+        <div class="pc-card">
+            <div class="pc-card-head">
+                <strong style="color: #37485a;">Medicines</strong>
+            </div>
+            <div class="pc-card-body" style="padding: 0;">
                 {{ formset.management_form }}
-                <table class="table">
-                    <thead><tr><th>Medicine</th><th>Dosage</th><th>Instruction</th><th>Duration</th></tr></thead>
-                    <tbody id="medicine-table-body">
-                        {% for f in formset %}
-                        <tr>
-                            <td>{{ f.medicine_name }}</td>
-                            <td>{{ f.dosage }}</td>
-                            <td>{{ f.instructions }}</td>
-                            <td>{{ f.duration }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-medicine-row">
-                    + Add Medicine
+                <div class="pc-table-wrap">
+                    <table class="pc-table">
+                        <thead><tr><th>Medicine</th><th>Dosage</th><th>Instruction</th><th>Duration</th></tr></thead>
+                        <tbody id="medicine-table-body">
+                            {% for f in formset %}
+                            <tr>
+                                <td>{{ f.medicine_name }}</td>
+                                <td>{{ f.dosage }}</td>
+                                <td>{{ f.instructions }}</td>
+                                <td>{{ f.duration }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pc-card-body" style="border-top: 1px solid #ebf0f6; display: flex; flex-direction: column; gap: 16px;">
+                <button type="button" class="pc-btn pc-btn--ghost" id="add-medicine-row" style="align-self: flex-start;">
+                    <i data-feather="plus" style="width: 16px; height: 16px;"></i> Add Medicine
                 </button>
-                <button type="submit" class="btn btn-primary w-100">Save & Issue Prescription</button>
+                <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%;">Save & Issue Prescription</button>
             </div>
         </div>
     </form>
@@ -52,6 +78,25 @@
 
 <script>
     (function () {
+        const styleNewInputs = (container) => {
+            const formFields = container.querySelectorAll('input, select, textarea');
+            formFields.forEach(field => {
+                if (field.type === 'hidden' || field.type === 'submit') return;
+                if (field.tagName === 'SELECT') {
+                    if (!field.classList.contains('pc-select')) field.classList.add('pc-select');
+                } else if (field.tagName === 'TEXTAREA') {
+                    if (!field.classList.contains('pc-textarea')) field.classList.add('pc-textarea');
+                } else {
+                    if (!field.classList.contains('pc-input')) field.classList.add('pc-input');
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            styleNewInputs(document.getElementById('rxForm'));
+            feather.replace();
+        });
+
         var addButton = document.getElementById('add-medicine-row');
         var tableBody = document.getElementById('medicine-table-body');
         var template = document.getElementById('medicine-empty-form-template');
@@ -63,8 +108,16 @@
         addButton.addEventListener('click', function () {
             var formIndex = parseInt(totalFormsInput.value, 10);
             var rowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
-            tableBody.insertAdjacentHTML('beforeend', rowHtml);
+            
+            // Insert the row
+            var tempDiv = document.createElement('table');
+            tempDiv.innerHTML = '<tbody>' + rowHtml + '</tbody>';
+            var newRow = tempDiv.querySelector('tr');
+            
+            tableBody.appendChild(newRow);
             totalFormsInput.value = formIndex + 1;
+            
+            styleNewInputs(newRow);
         });
     })();
 </script>

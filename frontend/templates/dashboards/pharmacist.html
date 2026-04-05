@@ -1,0 +1,55 @@
+<div class="pc-grid mb-4">
+    <div class="pc-col-4 pc-card" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Today's Prescriptions</h6>
+            <div class="pc-stat-value">{{ today_prescriptions }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-primary">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Total Medicine Lines</h6>
+            <div class="pc-stat-value">{{ total_medicine_lines }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-secondary">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Dispense Queue</h6>
+            <div class="pc-stat-value">{{ dispense_queue|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="pc-grid">
+    <div class="pc-col-12">
+        <div class="pc-card">
+            <div class="pc-card-head">
+                <strong style="color: #37485a;">Prescription Fulfillment Access</strong>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead><tr><th>Patient</th><th>Doctor</th><th>Time Created</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for rx in recent_prescriptions %}
+                        <tr>
+                            <td style="font-weight: 600; color: #24323b;">{{ rx.patient }}</td>
+                            <td>{{ rx.doctor.get_full_name|default:rx.doctor.username }}</td>
+                            <td style="color: #596578;">{{ rx.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                {% if rx.pdf_file %}
+                                    <a href="{{ rx.pdf_file.url }}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: auto; font-size: 13px;" target="_blank">
+                                        <i data-feather="download" style="width: 14px; height: 14px;"></i> View PDF
+                                    </a>
+                                {% else %}
+                                    <span style="color: #98a1b3; font-size: 13px;">No file attached</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" style="text-align: center; color: #98a1b3; padding: 32px;">No active prescriptions.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

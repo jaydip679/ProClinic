@@ -1,145 +1,292 @@
 {% extends "base.html" %}
 
-{% block title %}Appointment Detail{% endblock %}
+{% block title %}Clinical Detail{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="mb-3">
-        <a href="{% url 'doctor_appointments' %}" class="btn btn-sm btn-outline-secondary">Back to Appointments</a>
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <a href="{% url 'doctor_appointments' %}" class="pc-btn pc-btn--ghost" style="padding: 6px 12px; font-size: 13px; min-height: auto; margin-bottom: 16px; border-radius: 6px; border-color: #d1dde8;">
+            <i data-feather="arrow-left" style="width: 14px; height: 14px; margin-right: 4px;"></i> Back to Appointments
+        </a>
+        <h2 class="pc-h2" style="margin: 0;">Clinical Consultation Setup</h2>
+        <p class="pc-muted" style="margin-top: 4px;">Review patient details and capture clinical notes or issue prescriptions.</p>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">Patient Information</div>
-                <div class="card-body">
-                    <h5>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</h5>
-                    <p class="mb-1"><strong>DOB:</strong> {{ appointment.patient.date_of_birth }}</p>
-                    <p class="mb-1"><strong>Blood Group:</strong> {{ appointment.patient.blood_group }}</p>
-                    <p class="mb-1"><strong>Contact:</strong> {{ appointment.patient.contact_number }}</p>
-                    <p class="mb-1"><strong>Email:</strong> {{ appointment.patient.email|default:"-" }}</p>
-                    <p class="mb-1"><strong>Allergies:</strong> {{ appointment.patient.allergies|default:"None reported" }}</p>
-                    <p class="mb-0"><strong>Address:</strong> {{ appointment.patient.address|default:"-" }}</p>
+    <div class="pc-grid" style="gap: var(--pc-space-6);">
+        <!-- Context Column -->
+        <div class="pc-col-4">
+            <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; margin-bottom: var(--pc-space-5);">
+                <div class="pc-card-head" style="padding: 16px 24px; border-bottom-color: #f0f4f8; background: linear-gradient(to right, #1e2f39, #24323b);">
+                    <strong style="color: #fff; font-size: 15px; letter-spacing: 0.2px;">Patient Information</strong>
+                </div>
+                <div class="pc-card-body" style="padding: 24px;">
+                    <h5 style="margin: 0 0 20px 0; font-size: 18px; color: #1a322c; border-bottom: 1px solid #f0f4f8; padding-bottom: 12px;">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</h5>
+                    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
+                        <div style="display: flex; justify-content: space-between;"><strong style="color: #6c7c93; font-weight: 500;">DOB:</strong> <span style="color: #1a322c;">{{ appointment.patient.date_of_birth }}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong style="color: #6c7c93; font-weight: 500;">Blood Group:</strong> <span style="color: #1a322c; font-weight: 600; padding: 2px 8px; background: #f0f4f8; border-radius: 4px;">{{ appointment.patient.blood_group }}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong style="color: #6c7c93; font-weight: 500;">Contact:</strong> <span style="color: #1a322c;">{{ appointment.patient.contact_number }}</span></div>
+                        {% if appointment.patient.email %}<div style="display: flex; justify-content: space-between;"><strong style="color: #6c7c93; font-weight: 500;">Email:</strong> <span style="color: #1a322c;">{{ appointment.patient.email }}</span></div>{% endif %}
+                        <div style="display: flex; flex-direction: column; margin-top: 4px;">
+                            <strong style="color: #6c7c93; font-weight: 500; margin-bottom: 4px;">Allergies</strong> 
+                            {% if appointment.patient.allergies %}
+                                <span style="color: #c82c46; font-weight: 500; font-size: 13px; line-height: 1.4;">{{ appointment.patient.allergies }}</span>
+                            {% else %}
+                                <span style="color: #98a1b3; font-size: 13px;">None reported</span>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; flex-direction: column; margin-top: 4px;">
+                            <strong style="color: #6c7c93; font-weight: 500; margin-bottom: 4px;">Address</strong> 
+                            <span style="color: #37485a; font-size: 13px; line-height: 1.4;">{{ appointment.patient.address|default:"Not provided" }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm mt-4">
-                <div class="card-header">Appointment Summary</div>
-                <div class="card-body">
-                    <p class="mb-1"><strong>Date & Time:</strong> {{ appointment.scheduled_time|date:"M d, Y H:i" }}</p>
-                    <p class="mb-1"><strong>Status:</strong> {{ appointment.status }}</p>
-                    <p class="mb-0"><strong>Reason:</strong> {{ appointment.reason|default:"-" }}</p>
+            <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+                <div class="pc-card-head" style="padding: 16px 24px; border-bottom-color: #f0f4f8;">
+                    <strong style="color: #24323b; font-size: 15px; letter-spacing: 0.2px;">Appointment Sync</strong>
+                </div>
+                <div class="pc-card-body" style="padding: 24px;">
+                    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #6c7c93; font-weight: 500;">Status:</strong> 
+                            {% if appointment.status == 'Scheduled' %}<span class="pc-chip pc-chip--scheduled" style="padding: 4px 10px;">{{ appointment.status }}</span>
+                            {% elif appointment.status == 'Completed' %}<span class="pc-chip pc-chip--completed" style="padding: 4px 10px;">{{ appointment.status }}</span>
+                            {% else %}<span class="pc-chip pc-chip--pending" style="padding: 4px 10px;">{{ appointment.status }}</span>{% endif %}
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <strong style="color: #6c7c93; font-weight: 500; margin-bottom: 4px;">Date & Time</strong>
+                            <span style="color: #1a322c; font-weight: 500;">{{ appointment.scheduled_time|date:"M d, Y" }} at {{ appointment.scheduled_time|date:"H:i" }}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; margin-top: 4px;">
+                            <strong style="color: #6c7c93; font-weight: 500; margin-bottom: 4px;">Appointment Reason</strong> 
+                            <span style="color: #37485a; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f0f4f8;">{{ appointment.reason|default:"No reason provided" }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-7">
+        <!-- Form Column -->
+        <div class="pc-col-8">
             {% if prescription %}
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white">Prescription Already Issued</div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>Notes:</strong></p>
-                        <p>{{ prescription.notes|default:"-" }}</p>
-                        <h6 class="mt-3">Medicines</h6>
-                        <ul class="list-group">
-                            {% for item in prescription.items.all %}
-                                <li class="list-group-item">
-                                    <strong>{{ item.medicine_name }}</strong> | {{ item.dosage }} | {{ item.instructions }} | {{ item.duration }}
-                                </li>
-                            {% empty %}
-                                <li class="list-group-item text-muted">No medicine lines.</li>
-                            {% endfor %}
-                        </ul>
+                <div class="pc-card" style="box-shadow: 0 8px 24px rgba(12, 167, 137, 0.1); border-color: #0ca789; border-radius: 16px;">
+                    <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #e6f6f3; background: linear-gradient(to right, #f2faf8, #fff);">
+                        <strong style="color: #0ca789; font-size: 16px; letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px;">
+                            <i data-feather="check-circle" style="width: 18px; height: 18px;"></i> Consultation Terminated & Prescription Issued
+                        </strong>
                     </div>
-                </div>
-            {% else %}
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-primary text-white">Add Prescription</div>
-                        <div class="card-body">
-                            {% if prescription_form.non_field_errors %}
-                                <div class="alert alert-danger py-2">{{ prescription_form.non_field_errors }}</div>
-                            {% endif %}
-                            <label class="form-label" for="{{ prescription_form.notes.id_for_label }}">Clinical Notes</label>
-                            {{ prescription_form.notes }}
-                            {% if prescription_form.notes.errors %}
-                                <div class="text-danger small">{{ prescription_form.notes.errors|striptags }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <div class="pc-card-body" style="padding: 24px;">
+                        <h6 style="color: #1a322c; margin: 0 0 12px 0;">Clinical Notes</h6>
+                        <p style="color: #596578; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #f0f4f8; margin-bottom: 32px; white-space: pre-wrap;">{{ prescription.notes|default:"-" }}</p>
 
-                    <div class="card shadow-sm">
-                        <div class="card-header">Medicine Plan</div>
-                        <div class="card-body">
-                            {{ medicine_formset.management_form }}
-                            {% if medicine_formset.non_form_errors %}
-                                <div class="alert alert-danger py-2">{{ medicine_formset.non_form_errors }}</div>
-                            {% endif %}
-                            <table class="table">
-                                <thead>
+                        <h6 style="color: #1a322c; margin: 0 0 12px 0;">Registered Treatment Plan</h6>
+                        <div class="pc-table-wrap" style="border-radius: 8px;">
+                            <table class="pc-table" style="min-width: 100%;">
+                                <thead style="background: #f7fafc;">
                                     <tr>
-                                        <th>Medicine</th>
-                                        <th>Dosage</th>
-                                        <th>Instructions</th>
-                                        <th>Duration</th>
+                                        <th style="padding: 12px 16px;">Medicine</th>
+                                        <th style="padding: 12px 16px;">Dosage</th>
+                                        <th style="padding: 12px 16px;">Instructions</th>
+                                        <th style="padding: 12px 16px;">Duration</th>
                                     </tr>
                                 </thead>
-                                <tbody id="medicine-table-body">
-                                    {% for medicine_form in medicine_formset %}
+                                <tbody>
+                                    {% for item in prescription.items.all %}
                                         <tr>
-                                            <td>{{ medicine_form.medicine_name }}</td>
-                                            <td>{{ medicine_form.dosage }}</td>
-                                            <td>{{ medicine_form.instructions }}</td>
-                                            <td>{{ medicine_form.duration }}</td>
+                                            <td style="font-weight: 600; color: #24323b; padding: 16px;">{{ item.medicine_name }}</td>
+                                            <td style="color: #24323b; padding: 16px;">{{ item.dosage }}</td>
+                                            <td style="color: #596578; padding: 16px;">{{ item.instructions }}</td>
+                                            <td style="color: #596578; padding: 16px;">{{ item.duration }}</td>
                                         </tr>
-                                        {% if medicine_form.errors %}
-                                            <tr>
-                                                <td colspan="4" class="text-danger small">{{ medicine_form.errors|striptags }}</td>
-                                            </tr>
-                                        {% endif %}
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" style="text-align: center; color: #98a1b3; padding: 32px;">No specific medicine units logged.</td>
+                                        </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
-                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-medicine-row">
-                                + Add Medicine
-                            </button>
-                            <button type="submit" class="btn btn-primary w-100">
-                                Issue Prescription & Mark Appointment Completed
-                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <form method="post" id="rxForm" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Notes Card -->
+                    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; margin-bottom: var(--pc-space-5);">
+                        <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                            <strong style="color: #1a322c; font-size: 16px; letter-spacing: -0.2px;">Clinical Assessment</strong>
+                        </div>
+                        <div class="pc-card-body" style="padding: 24px;">
+                            {% if prescription_form.non_field_errors %}
+                                <div class="pc-alert pc-alert--danger" style="margin-bottom: 20px;">{{ prescription_form.non_field_errors }}</div>
+                            {% endif %}
+                            
+                            <div class="pc-form-row" style="margin: 0;">
+                                <label class="pc-label" for="{{ prescription_form.notes.id_for_label }}">Findings, Diagnoses & Strategy</label>
+                                {{ prescription_form.notes }}
+                                {% if prescription_form.notes.errors %}
+                                    <div class="pc-inline-error" style="margin-top: 6px;">{{ prescription_form.notes.errors|striptags }}</div>
+                                {% endif %}
+                                <div class="pc-help" style="margin-top: 8px;">Documentation stored immutably to the patient's EHR profile.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medicine Card -->
+                    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+                        <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8; display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #1a322c; font-size: 16px; letter-spacing: -0.2px;">Treatment & Medicine Specification</strong>
+                        </div>
+                        <div class="pc-card-body" style="padding: 24px;">
+                            {{ medicine_formset.management_form }}
+                            {% if medicine_formset.non_form_errors %}
+                                <div class="pc-alert pc-alert--danger" style="margin-bottom: 20px;">{{ medicine_formset.non_form_errors }}</div>
+                            {% endif %}
+
+                            <!-- Build Dynamic Grid List instead of table -->
+                            <div id="medicineList" style="display: flex; flex-direction: column; gap: 16px;">
+                                {% for m_form in medicine_formset %}
+                                    <div class="med-row pc-grid" style="align-items: flex-start; gap: 12px; background: #fdfdfe; padding: 16px; border: 1px solid #e4eaf2; border-radius: 8px;">
+                                        <!-- Hidden internals like id/delete -->
+                                        {% for hidden in m_form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                        
+                                        <div class="pc-col-3" style="padding: 0;">
+                                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Medicine Name</label>
+                                            {{ m_form.medicine_name }}
+                                            {% if m_form.medicine_name.errors %}<div class="pc-inline-error mt-1">{{ m_form.medicine_name.errors|striptags }}</div>{% endif %}
+                                        </div>
+                                        <div class="pc-col-2" style="padding: 0;">
+                                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Dosage</label>
+                                            {{ m_form.dosage }}
+                                        </div>
+                                        <div class="pc-col-3" style="padding: 0;">
+                                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Instructions (e.g. 1-0-1)</label>
+                                            {{ m_form.instructions }}
+                                        </div>
+                                        <div class="pc-col-3" style="padding: 0;">
+                                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Duration</label>
+                                            {{ m_form.duration }}
+                                        </div>
+                                        <div class="pc-col-1" style="padding: 0; display: flex; justify-content: center; align-items: flex-end; height: 60px;">
+                                            <!-- Checkbox visually hidden, controlled by button -->
+                                            {% if m_form.DELETE %}
+                                                <div style="display: none;">{{ m_form.DELETE }}</div>
+                                            {% endif %}
+                                            <button type="button" class="pc-btn pc-btn--ghost remove-btn" style="color: #c82c46; padding: 8px; border: none;" title="Delete Row">
+                                                <i data-feather="trash-2" style="width: 18px; height: 18px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+                                <button type="button" class="pc-btn pc-btn--ghost" id="addMedBtn" style="border-radius: 8px; border-color: #d1dde8;">
+                                    <i data-feather="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> Add Medicine
+                                </button>
+                                <button type="submit" class="pc-btn pc-btn--primary" style="padding: 12px 24px; font-size: 15px; border-radius: 8px;">
+                                    <i data-feather="edit-3" style="width: 18px; height: 18px; margin-right: 8px;"></i> Save Prescription & Complete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
+
+                <!-- Template for dynamic injection -->
+                <template id="medTemplate">
+                    <div class="med-row pc-grid" style="align-items: flex-start; gap: 12px; background: #fdfdfe; padding: 16px; border: 1px solid #e4eaf2; border-radius: 8px;">
+                        {% for hidden in medicine_formset.empty_form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        <div class="pc-col-3" style="padding: 0;">
+                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Medicine Name</label>
+                            {{ medicine_formset.empty_form.medicine_name }}
+                        </div>
+                        <div class="pc-col-2" style="padding: 0;">
+                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Dosage</label>
+                            {{ medicine_formset.empty_form.dosage }}
+                        </div>
+                        <div class="pc-col-3" style="padding: 0;">
+                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Instructions</label>
+                            {{ medicine_formset.empty_form.instructions }}
+                        </div>
+                        <div class="pc-col-3" style="padding: 0;">
+                            <label class="pc-label" style="font-size: 12px; margin-bottom: 4px;">Duration</label>
+                            {{ medicine_formset.empty_form.duration }}
+                        </div>
+                        <div class="pc-col-1" style="padding: 0; display: flex; justify-content: center; align-items: flex-end; height: 60px;">
+                            {% if medicine_formset.empty_form.DELETE %}
+                                <div style="display: none;">{{ medicine_formset.empty_form.DELETE }}</div>
+                            {% endif %}
+                            <button type="button" class="pc-btn pc-btn--ghost remove-btn" style="color: #c82c46; padding: 8px; border: none;">
+                                <i data-feather="trash-2" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Bind styling logic
+                        const styleInputs = (container) => {
+                            container.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select, textarea').forEach(el => {
+                                if (el.tagName === 'SELECT') el.classList.add('pc-select');
+                                else if (el.tagName === 'TEXTAREA') el.classList.add('pc-textarea');
+                                else if (!el.classList.contains('pc-input')) el.classList.add('pc-input');
+                            });
+                        };
+
+                        styleInputs(document.getElementById('rxForm'));
+
+                        // Dynamic Add Logic
+                        const addBtn = document.getElementById('addMedBtn');
+                        const medList = document.getElementById('medicineList');
+                        const tmpl = document.getElementById('medTemplate');
+                        const totalInput = document.getElementById('id_medicine-TOTAL_FORMS');
+
+                        if (addBtn && medList && tmpl && totalInput) {
+                            addBtn.addEventListener('click', () => {
+                                const idx = parseInt(totalInput.value, 10);
+                                const html = tmpl.innerHTML.replace(/__prefix__/g, idx);
+                                
+                                const wrapper = document.createElement('div');
+                                wrapper.innerHTML = html;
+                                const newRow = wrapper.firstElementChild;
+                                
+                                medList.appendChild(newRow);
+                                styleInputs(newRow);
+                                if (typeof feather !== 'undefined') feather.replace();
+                                
+                                totalInput.value = idx + 1;
+                            });
+
+                            // Event Delegation for Deletes
+                            medList.addEventListener('click', (e) => {
+                                const btn = e.target.closest('.remove-btn');
+                                if (!btn) return;
+                                
+                                const row = btn.closest('.med-row');
+                                // Check if there's a hidden DELETE checkbox. If so, check it.
+                                const delCheck = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+                                if (delCheck) {
+                                    delCheck.checked = true;
+                                    row.style.display = 'none'; // hide it instead of DOM removal for Django valid processing
+                                } else {
+                                    // if it's an un-initialized empty row without a real db pk, just rip it from DOM
+                                    row.remove();
+                                }
+                            });
+                        }
+
+                        if (typeof feather !== 'undefined') feather.replace();
+                    });
+                </script>
             {% endif %}
         </div>
     </div>
 </div>
-
-<template id="medicine-empty-form-template">
-    <tr>
-        <td>{{ medicine_formset.empty_form.medicine_name }}</td>
-        <td>{{ medicine_formset.empty_form.dosage }}</td>
-        <td>{{ medicine_formset.empty_form.instructions }}</td>
-        <td>{{ medicine_formset.empty_form.duration }}</td>
-    </tr>
-</template>
-
-<script>
-    (function () {
-        var addButton = document.getElementById('add-medicine-row');
-        var tableBody = document.getElementById('medicine-table-body');
-        var template = document.getElementById('medicine-empty-form-template');
-        var totalFormsInput = document.getElementById('id_medicine-TOTAL_FORMS');
-        if (!addButton || !tableBody || !template || !totalFormsInput) {
-            return;
-        }
-
-        addButton.addEventListener('click', function () {
-            var formIndex = parseInt(totalFormsInput.value, 10);
-            var rowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
-            tableBody.insertAdjacentHTML('beforeend', rowHtml);
-            totalFormsInput.value = formIndex + 1;
-        });
-    })();
-</script>
 {% endblock %}

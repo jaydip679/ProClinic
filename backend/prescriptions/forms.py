@@ -4,36 +4,29 @@ from django.forms import inlineformset_factory
 
 
 class PrescriptionForm(forms.ModelForm):
+    """Form for creating a prescription linked to a clinical Visit."""
+
     def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
         if doctor:
-            appointment_queryset = doctor.doctor_appointments.order_by('-scheduled_time')
-            self.fields['appointment'].queryset = appointment_queryset
+            from patients.models import Visit
+            # Only show visits where this doctor is the treating doctor
+            visit_qs = Visit.objects.filter(doctor=doctor).select_related('patient').order_by('-visit_date')
+            self.fields['visit'].queryset = visit_qs
             self.fields['patient'].queryset = self.fields['patient'].queryset.filter(
-                appointments__doctor=doctor
+                visits__doctor=doctor
             ).distinct()
 
     class Meta:
         model = Prescription
-        fields = ['patient', 'appointment', 'notes']
+        fields = ['patient', 'visit']
         widgets = {
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Clinical findings...'}),
             'patient': forms.Select(attrs={'class': 'form-select'}),
-            'appointment': forms.Select(attrs={'class': 'form-select'}),
+            'visit': forms.Select(attrs={'class': 'form-select'}),
         }
 
 
-class DoctorPrescriptionForm(forms.ModelForm):
-    class Meta:
-        model = Prescription
-        fields = ['notes']
-        widgets = {
-            'notes': forms.Textarea(
-                attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Clinical findings and plan...'}
-            ),
-        }
-
-# This creates a dynamic group of medicine inputs
+# MedicineFormSet — unchanged, tied to PrescriptionItem
 MedicineFormSet = inlineformset_factory(
     Prescription, PrescriptionItem,
     fields=('medicine_name', 'dosage', 'instructions', 'duration'),
@@ -47,3 +40,4 @@ MedicineFormSet = inlineformset_factory(
         'duration': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 5 days'}),
     }
 )
+

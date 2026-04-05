@@ -1,0 +1,169 @@
+<div class="pc-grid" style="gap: var(--pc-space-5); margin-bottom: var(--pc-space-6);">
+    <div class="pc-col-4 pc-card pc-stat-primary" style="box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Total Visits</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ my_total_visits }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-secondary" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white; box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Prescriptions Issued</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">{{ my_prescriptions|length }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-warning" style="box-shadow: 0 10px 30px rgba(255, 209, 102, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 15px; letter-spacing: 0.3px;">Pending Bills</h6>
+            <div class="pc-stat-value" style="font-size: 34px; margin-top: 10px;">&#8377;{{ my_invoice_due }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="pc-grid" style="gap: var(--pc-space-6);">
+    <div class="pc-col-8" style="display: flex; flex-direction: column; gap: var(--pc-space-6);">
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Upcoming Appointments</strong>
+                <a href="{% url 'book_appointment' %}" class="pc-btn pc-btn--primary" style="padding: 6px 14px; min-height: 36px; font-size: 13px; border-radius: 8px; box-shadow: 0 4px 12px rgba(8, 122, 102, 0.2);">
+                    Book New
+                </a>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Date & Time</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Doctor</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Status</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in my_upcoming_appointments %}
+                        <tr>
+                            <td style="font-weight: 600; padding: 18px 24px;">{{ appt.scheduled_time|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 18px 14px;">{{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
+                            <td style="padding: 18px 14px;">
+                                {% if appt.status == 'Confirmed' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Confirmed</span>
+                                {% elif appt.status == 'Pending' %}<span class="pc-chip pc-chip--pending" style="padding: 6px 12px;">Pending</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.status }}</span>{% endif %}
+                            </td>
+                            <td style="color: #596578; padding: 18px 14px;">{{ appt.reason|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #8e9aab; padding: 50px 20px;">
+                                <div style="font-size: 15px; margin-bottom: 8px;">No upcoming appointments.</div>
+                                <div style="font-size: 13px; font-weight: normal;">Schedule an appointment to see it here.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Past Medical History</strong>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Date</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Doctor</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Status</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in my_past_history %}
+                        <tr>
+                            <td style="font-weight: 500; padding: 16px 24px;">{{ appt.scheduled_time|date:"M d, Y" }}</td>
+                            <td style="padding: 16px 14px;">{{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
+                            <td style="padding: 16px 14px;">
+                                {% if appt.status == 'Completed' %}<span class="pc-chip pc-chip--completed">Completed</span>
+                                {% elif appt.status == 'Cancelled' %}<span class="pc-chip pc-chip--danger">Cancelled</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled">{{ appt.status }}</span>{% endif %}
+                            </td>
+                            <td style="color: #596578; padding: 16px 14px;">{{ appt.reason|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #8e9aab; padding: 50px 20px;">
+                                <div style="font-size: 14px;">No past history found.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="pc-col-4" style="display: flex; flex-direction: column; gap: var(--pc-space-6);">
+        
+        <div class="pc-card" style="box-shadow: 0 12px 30px rgba(12, 167, 137, 0.08); border-color: #d2ebe6; border-radius: 16px; overflow: hidden;">
+            <div class="pc-card-head" style="background: linear-gradient(to right, #f2faf8, #fff); padding: 20px 24px; border-bottom: 1px solid #e1f2ef;">
+                <strong style="color: #1a322c; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                    <div style="background: #0ca789; color: #fff; width: 28px; height: 28px; border-radius: 8px; display: flex; justify-content: center; align-items: center;">
+                        <i data-feather="message-circle" style="width: 14px; height: 14px;"></i>
+                    </div>
+                    AI Help Desk
+                </strong>
+            </div>
+            <div class="pc-card-body" style="padding: 24px;">
+                <p style="color: #4b5b6a; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">{{ helpdesk_message }}</p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                    <a href="{% url 'book_appointment' %}" class="pc-btn pc-btn--primary" style="font-size: 14px; padding: 10px 16px; border-radius: 10px; text-align: center;">Book an Appointment</a>
+                    <a href="{% url 'patient_profile' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 10px 16px; border-radius: 10px; text-align: center;">Update My Profile</a>
+                </div>
+                <div class="pc-alert pc-alert--info" style="font-size: 13px; border-radius: 10px; background: #f2f7fd; border: 1px solid #ddecfa; color: #2e557b;">
+                    <strong style="display: block; margin-bottom: 6px; font-weight: 600;">Example question:</strong>
+                    "How do I download my last completed prescription?"
+                </div>
+            </div>
+        </div>
+
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Prescriptions Access</strong>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table" style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="padding-top: 14px; padding-bottom: 14px; padding-left: 24px;">Doctor</th>
+                            <th style="padding-top: 14px; padding-bottom: 14px;">Date</th>
+                            <th style="padding-top: 14px; padding-bottom: 14px;">File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rx in my_prescriptions %}
+                        <tr>
+                            <td style="padding: 14px 14px 14px 24px; font-weight: 500;">{{ rx.doctor.get_full_name|default:rx.doctor.username }}</td>
+                            <td style="color: #596578; padding: 14px 14px;">{{ rx.created_at|date:"M d, Y" }}</td>
+                            <td style="padding: 14px 14px;">
+                                {% if rx.pdf_file %}
+                                    <a href="{{ rx.pdf_file.url }}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: 28px; font-size: 12px; gap: 6px; border-radius: 6px; border-color: #d1dde8;" target="_blank">
+                                        <i data-feather="download" style="width: 12px; height: 12px; color: #087a66;"></i> PDF
+                                    </a>
+                                {% else %}
+                                    <span style="color: #98a1b3; font-size: 12px; font-weight: 500;">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #8e9aab; padding: 40px 20px;">
+                                <div style="font-size: 14px;">No prescriptions available.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

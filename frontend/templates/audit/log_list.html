@@ -1,40 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">System Audit Logs</h2>
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <h2 class="pc-h2" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-feather="activity" style="color: var(--pc-primary);"></i> System Audit Logs
+        </h2>
+        <p class="pc-muted" style="margin-top: 4px;">Review system-wide data events and user actions.</p>
+    </div>
     
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <table class="table table-sm table-hover mb-0">
-                <thead class="table-dark">
+    <div class="pc-card">
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
+                <thead>
                     <tr>
-                        <th>Timestamp</th>
-                        <th>Actor</th>
-                        <th>Action</th>
-                        <th>Entity</th>
-                        <th>Details</th>
+                        <th style="padding: 12px 16px;">Timestamp</th>
+                        <th style="padding: 12px 16px;">Actor</th>
+                        <th style="padding: 12px 16px;">Action</th>
+                        <th style="padding: 12px 16px;">Entity</th>
+                        <th style="padding: 12px 16px;">Details</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td class="small">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
-                        <td><strong>{{ log.actor.username }}</strong></td>
-                        <td>
+                        <td style="padding: 12px 16px; font-size: 13px; color: #6f8295;">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                        <td style="padding: 12px 16px;"><strong style="color: #37485a;">{{ log.actor.username }}</strong></td>
+                        <td style="padding: 12px 16px;">
                             {% if log.action_type == 'CREATE' %}
-                                <span class="badge bg-success">{{ log.action_type }}</span>
+                                <span class="pc-chip pc-chip--completed">{{ log.action_type }}</span>
                             {% elif log.action_type == 'DELETE' %}
-                                <span class="badge bg-danger">{{ log.action_type }}</span>
+                                <span class="pc-chip pc-chip--danger">{{ log.action_type }}</span>
                             {% else %}
-                                <span class="badge bg-warning text-dark">{{ log.action_type }}</span>
+                                <span class="pc-chip pc-chip--scheduled">{{ log.action_type }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ log.entity_type }} (ID: {{ log.entity_id }})</td>
-                        <td class="small text-muted">{{ log.changes|truncatechars:50 }}</td>
+                        <td style="padding: 12px 16px; font-size: 14px;">{{ log.entity_type }} <span style="color: #8e9aab;">(ID: {{ log.entity_id }})</span></td>
+                        <td style="padding: 12px 16px; font-size: 13px; color: #6f8295;">{{ log.changes|truncatechars:60 }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="text-center">No logs found.</td></tr>
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #8e9aab; padding: 40px 20px;">No audit logs found.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

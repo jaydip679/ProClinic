@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice Template A4</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+</head>
+<body>
+  <div class="pc-a4">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h1 style="font-size:28px;">ProClinic</h1>
+        <p style="margin:4px 0 0;color:#5a6678;">Tax Invoice</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0;"><strong>Invoice:</strong> INV-557</p>
+        <p style="margin:0;"><strong>Date:</strong> {{ today|default:'2026-02-20' }}</p>
+        <p style="margin:0;"><strong>Status:</strong> Unpaid</p>
+      </div>
+    </div>
+
+    <hr style="border:0;border-top:1px solid #dce4ed;margin:14px 0;">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <h3 style="font-size:16px;margin-bottom:6px;">Bill To</h3>
+        <p style="margin:0;">Nitin Sharma</p>
+        <p style="margin:0;">Patient ID: PAT-920</p>
+        <p style="margin:0;">Phone: +91 99999 01111</p>
+      </div>
+      <div>
+        <h3 style="font-size:16px;margin-bottom:6px;">Visit Reference</h3>
+        <p style="margin:0;">Dr. A. Desai</p>
+        <p style="margin:0;">2026-02-20 10:30–11:00</p>
+      </div>
+    </div>
+
+    <table style="margin-top:18px;">
+      <thead>
+        <tr><th>Description</th><th>Qty</th><th>Unit Cost</th><th>Line Total</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Consultation</td><td>1</td><td>₹500</td><td>₹500</td></tr>
+        <tr><td>Medicines</td><td>1</td><td>₹800</td><td>₹800</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:14px;max-width:320px;margin-left:auto;">
+      <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><strong>₹1300</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span>GST (18%)</span><strong>₹234</strong></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #dce4ed;margin-top:8px;padding-top:8px;font-size:18px;">
+        <span>Total</span><strong>₹1534</strong>
+      </div>
+    </div>
+
+    <div style="margin-top:36px;display:flex;justify-content:space-between;">
+      <div>
+        <p style="margin:0;font-size:12px;color:#617085;">Payment methods: UPI, Card, Cash</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0;">Accountant</p>
+        <p style="margin:0;font-size:12px;color:#617085;">ProClinic Billing Desk</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,39 +1,83 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <form method="post">
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <h2 class="pc-h2" style="margin: 0;">Generate Invoice</h2>
+        <p class="pc-muted" style="margin-top: 4px;">Create a new billing statement for a patient</p>
+    </div>
+
+    <form method="post" id="invoiceForm">
         {% csrf_token %}
-        <div class="card shadow-sm mb-4 border-success">
-            <div class="card-header bg-success text-white"><h4>Generate Invoice</h4></div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-5">{{ form.patient.label_tag }} {{ form.patient }}</div>
-                    <div class="col-md-5">{{ form.appointment.label_tag }} {{ form.appointment }}</div>
-                    <div class="col-md-2">{{ form.status.label_tag }} {{ form.status }}</div>
+        <div class="pc-card" style="margin-bottom: var(--pc-space-5);">
+            <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f);">
+                <span style="color: #fff; font-weight: 600;">Billing Details</span>
+            </div>
+            <div class="pc-card-body">
+                <div class="pc-grid">
+                    <div class="pc-col-5">
+                        <div class="pc-form-row">
+                            <label class="pc-label">{{ form.patient.label }}</label>
+                            {{ form.patient }}
+                        </div>
+                    </div>
+                    <div class="pc-col-5">
+                        <div class="pc-form-row">
+                            <label class="pc-label">{{ form.appointment.label }}</label>
+                            {{ form.appointment }}
+                        </div>
+                    </div>
+                    <div class="pc-col-2">
+                        <div class="pc-form-row">
+                            <label class="pc-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-light"><h5>Line Items</h5></div>
-            <div class="card-body">
+        <div class="pc-card">
+            <div class="pc-card-head">
+                <strong style="color: #37485a;">Line Items</strong>
+            </div>
+            <div class="pc-card-body" style="padding: 0;">
                 {{ formset.management_form }}
-                <table class="table">
-                    <thead><tr><th>Service</th><th>Unit Cost</th><th>Qty</th></tr></thead>
-                    <tbody>
-                        {% for f in formset %}
-                        <tr>
-                            <td>{{ f.service_name }}</td>
-                            <td>{{ f.unit_cost }}</td>
-                            <td>{{ f.quantity }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <button type="submit" class="btn btn-success w-100">Finalize & Generate Bill</button>
+                <div class="pc-table-wrap">
+                    <table class="pc-table" id="line-items-table">
+                        <thead><tr><th>Service</th><th>Unit Cost</th><th>Qty</th></tr></thead>
+                        <tbody>
+                            {% for f in formset %}
+                            <tr>
+                                <td>{{ f.service_name }}</td>
+                                <td>{{ f.unit_cost }}</td>
+                                <td>{{ f.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pc-card-body" style="border-top: 1px solid #ebf0f6;">
+                <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%;">Finalize & Generate Bill</button>
             </div>
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const formFields = document.querySelectorAll('#invoiceForm input, #invoiceForm select, #invoiceForm textarea');
+        formFields.forEach(field => {
+            if (field.type === 'hidden' || field.type === 'submit') return;
+            if (field.tagName === 'SELECT') {
+                field.classList.add('pc-select');
+            } else if (field.tagName === 'TEXTAREA') {
+                field.classList.add('pc-textarea');
+            } else {
+                field.classList.add('pc-input');
+            }
+        });
+    });
+</script>
 {% endblock %}

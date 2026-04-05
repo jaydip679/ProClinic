@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Required | ProClinic</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+</head>
+<body>
+  <main class="pc-container" style="min-height:90vh;display:grid;place-items:center;">
+    <div class="pc-card" style="max-width:620px;width:100%;">
+      <div class="pc-card-head"><h2 class="pc-h2">Permission Required</h2></div>
+      <div class="pc-card-body">
+        <p class="pc-muted">This page is not available for your current role. Request access from your administrator if this is required for your workflow.</p>
+        <div class="pc-alert pc-alert--warning" style="margin-top:10px;">
+          Role mismatch detected. UI actions are hidden for this role to prevent accidental access.
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <a class="pc-btn pc-btn--primary" href="mailto:admin@proclinic.local?subject=Request%20Access">Request access</a>
+          <a class="pc-btn pc-btn--ghost" href="/dashboard/">Back to dashboard</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

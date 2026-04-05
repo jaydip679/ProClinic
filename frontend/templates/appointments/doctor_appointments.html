@@ -3,41 +3,55 @@
 {% block title %}My Appointments{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Doctor Appointment Center</h2>
-        <a href="{% url 'doctor_unavailability' %}" class="btn btn-outline-dark btn-sm">Manage Unavailability</a>
+<div class="pc-section">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Doctor Appointment Center</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Manage your schedule and access patient EHRs</p>
+        </div>
+        <a href="{% url 'doctor_unavailability' %}" class="pc-btn pc-btn--ghost" style="color: #c82c46; border-color: #f7d4d9; background-color: #fdf2f4; border-radius: 8px;">
+            <i data-feather="clock" style="width: 16px; height: 16px; margin-right: 6px;"></i> Manage Unavailability
+        </a>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">Upcoming Appointments</div>
-        <div class="card-body p-0">
-            <table class="table mb-0">
+    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; margin-bottom: var(--pc-space-6);">
+        <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8; background: linear-gradient(to right, #f2faf8, #fff);">
+            <strong style="color: #1a322c; font-size: 16px; letter-spacing: -0.2px;">Upcoming Appointments</strong>
+        </div>
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
-                        <th>Patient</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th style="padding: 16px 24px;">Date & Time</th>
+                        <th style="padding: 16px 14px;">Patient</th>
+                        <th style="padding: 16px 14px;">Reason</th>
+                        <th style="padding: 16px 14px;">Status</th>
+                        <th style="padding: 16px 24px; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for appt in upcoming_appointments %}
                         <tr>
-                            <td>{{ appt.scheduled_time|date:"M d, Y H:i" }}</td>
-                            <td>{{ appt.patient.first_name }} {{ appt.patient.last_name }}</td>
-                            <td>{{ appt.reason|default:"-" }}</td>
-                            <td><span class="badge bg-info text-dark">{{ appt.status }}</span></td>
-                            <td>
-                                <a href="{% url 'doctor_appointment_detail' appt.id %}" class="btn btn-sm btn-outline-primary">
-                                    Open
+                            <td style="font-weight: 600; padding: 18px 24px; color: #24323b;">{{ appt.scheduled_time|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 18px 14px;">{{ appt.patient.first_name }} {{ appt.patient.last_name }}</td>
+                            <td style="color: #596578; padding: 18px 14px;">{{ appt.reason|default:"-" }}</td>
+                            <td style="padding: 18px 14px;">
+                                {% if appt.status == 'Confirmed' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Confirmed</span>
+                                {% elif appt.status == 'Pending' %}<span class="pc-chip pc-chip--pending" style="padding: 6px 12px;">Pending</span>
+                                {% elif appt.status == 'Cancelled' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Cancelled</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.status }}</span>{% endif %}
+                            </td>
+                            <td style="padding: 18px 24px; text-align: right;">
+                                <a href="{% url 'doctor_appointment_detail' appt.id %}" class="pc-btn pc-btn--primary" style="padding: 6px 16px; min-height: 32px; font-size: 13px; border-radius: 8px; box-shadow: 0 4px 12px rgba(8, 122, 102, 0.2);">
+                                    Open Consult
                                 </a>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">No upcoming appointments.</td>
+                            <td colspan="5" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                                <div style="font-size: 15px; margin-bottom: 8px;">No upcoming appointments.</div>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -45,41 +59,51 @@
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header">Past Appointments</div>
-        <div class="card-body p-0">
-            <table class="table mb-0">
+    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+        <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+            <strong style="color: #37485a; font-size: 16px; letter-spacing: -0.2px;">Past Appointments</strong>
+        </div>
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
-                        <th>Patient</th>
-                        <th>Status</th>
-                        <th>Prescription</th>
-                        <th>Action</th>
+                        <th style="padding: 16px 24px;">Date & Time</th>
+                        <th style="padding: 16px 14px;">Patient</th>
+                        <th style="padding: 16px 14px;">Status</th>
+                        <th style="padding: 16px 14px;">Prescription</th>
+                        <th style="padding: 16px 24px; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for appt in past_appointments %}
                         <tr>
-                            <td>{{ appt.scheduled_time|date:"M d, Y H:i" }}</td>
-                            <td>{{ appt.patient.first_name }} {{ appt.patient.last_name }}</td>
-                            <td><span class="badge bg-secondary">{{ appt.status }}</span></td>
-                            <td>
+                            <td style="font-weight: 500; padding: 18px 24px;">{{ appt.scheduled_time|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 18px 14px;">{{ appt.patient.first_name }} {{ appt.patient.last_name }}</td>
+                            <td style="padding: 18px 14px;">
+                                {% if appt.status == 'Completed' %}<span class="pc-chip pc-chip--completed" style="padding: 6px 12px;">Completed</span>
+                                {% elif appt.status == 'Cancelled' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Cancelled</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.status }}</span>{% endif %}
+                            </td>
+                            <td style="padding: 18px 14px;">
                                 {% if appt.prescription %}
-                                    <span class="text-success">Issued</span>
+                                    <span style="color: #0ca789; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+                                        <i data-feather="check-circle" style="width: 14px; height: 14px;"></i> Issued
+                                    </span>
                                 {% else %}
-                                    <span class="text-muted">Not issued</span>
+                                    <span style="color: #98a1b3; font-size: 13px;">Not issued</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{% url 'doctor_appointment_detail' appt.id %}" class="btn btn-sm btn-outline-secondary">
-                                    Open
+                            <td style="padding: 18px 24px; text-align: right;">
+                                <a href="{% url 'doctor_appointment_detail' appt.id %}" class="pc-btn pc-btn--ghost" style="padding: 6px 16px; min-height: 32px; font-size: 13px; border-radius: 8px;">
+                                    View
                                 </a>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">No past appointments yet.</td>
+                            <td colspan="5" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                                <div style="font-size: 15px; margin-bottom: 8px;">No past appointments yet.</div>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

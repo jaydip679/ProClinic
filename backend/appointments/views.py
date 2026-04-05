@@ -5,11 +5,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django import forms as django_forms
 
-from prescriptions.forms import DoctorPrescriptionForm, MedicineFormSet
+from prescriptions.forms import MedicineFormSet
 from .forms import AppointmentForm, DoctorUnavailabilityForm
 from .models import Appointment, DoctorUnavailability
-from patients.models import Patient
+from patients.models import Patient, Visit
 
 
 BOOKING_ALLOWED_ROLES = {'ADMIN', 'RECEPTIONIST', 'PATIENT'}
@@ -98,21 +99,58 @@ def doctor_appointment_detail(request, appointment_id):
         pk=appointment_id,
         doctor=request.user,
     )
-    prescription = getattr(appointment, 'prescription', None)
+
+    # Fetch existing visit + prescription via the appointment if they exist
+    visit = getattr(appointment, 'visit', None)
+    prescription = None
+    if visit:
+        prescription = visit.prescriptions.select_related('doctor').prefetch_related('items').first()
+
+    # Inline form for Visit notes/diagnosis
+    class VisitNoteForm(django_forms.Form):
+        notes = django_forms.CharField(
+            widget=django_forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Clinical notes...'}),
+            required=False,
+        )
+        diagnosis = django_forms.CharField(
+            widget=django_forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Diagnosis...'}),
+            required=False,
+        )
 
     if request.method == 'POST':
         if prescription:
             messages.info(request, "Prescription already exists for this appointment.")
             return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
-        prescription_form = DoctorPrescriptionForm(request.POST)
+        visit_form = VisitNoteForm(request.POST)
         medicine_formset = MedicineFormSet(request.POST, prefix='medicine')
-        if prescription_form.is_valid() and medicine_formset.is_valid():
+
+        if visit_form.is_valid() and medicine_formset.is_valid():
             with transaction.atomic():
-                new_prescription = prescription_form.save(commit=False)
-                new_prescription.patient = appointment.patient
-                new_prescription.appointment = appointment
-                new_prescription.doctor = request.user
+                # Create (or reuse) the Visit record for this appointment
+                visit, _ = Visit.objects.get_or_create(
+                    appointment=appointment,
+                    defaults={
+                        'patient': appointment.patient,
+                        'doctor': request.user,
+                        'visit_date': appointment.scheduled_time,
+                        'notes': visit_form.cleaned_data.get('notes', ''),
+                        'diagnosis': visit_form.cleaned_data.get('diagnosis', ''),
+                    },
+                )
+                if not _:
+                    # Visit already existed — update notes
+                    visit.notes = visit_form.cleaned_data.get('notes', visit.notes)
+                    visit.diagnosis = visit_form.cleaned_data.get('diagnosis', visit.diagnosis)
+                    visit.save(update_fields=['notes', 'diagnosis'])
+
+                from prescriptions.models import Prescription
+                new_prescription = Prescription(
+                    visit=visit,
+                    patient=appointment.patient,
+                    doctor=request.user,
+                    appointment=appointment,
+                )
                 new_prescription.save()
 
                 medicine_formset.instance = new_prescription
@@ -123,17 +161,21 @@ def doctor_appointment_detail(request, appointment_id):
 
             messages.success(
                 request,
-                "Prescription issued and appointment moved to past appointments.",
+                "Visit recorded, prescription issued, appointment marked completed.",
             )
             return redirect('doctor_appointments')
     else:
-        prescription_form = DoctorPrescriptionForm()
+        visit_form = VisitNoteForm(initial={
+            'notes': visit.notes if visit else '',
+            'diagnosis': visit.diagnosis if visit else '',
+        })
         medicine_formset = MedicineFormSet(prefix='medicine')
 
     context = {
         'appointment': appointment,
+        'visit': visit,
         'prescription': prescription,
-        'prescription_form': prescription_form,
+        'prescription_form': visit_form,
         'medicine_formset': medicine_formset,
     }
     return render(request, 'appointments/doctor_appointment_detail.html', context)
@@ -173,3 +215,94 @@ def delete_doctor_unavailability(request, block_id):
     block.delete()
     messages.success(request, "Unavailability entry removed.")
     return redirect('doctor_unavailability')
+
+
+import datetime
+from django.http import JsonResponse
+from accounts.models import CustomUser
+
+def get_available_slots(request):
+    doctor_id = request.GET.get('doctor_id')
+    date_str = request.GET.get('date')
+    if not doctor_id or not date_str:
+        return JsonResponse({'slots': []})
+    
+    try:
+        query_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        doctor = CustomUser.objects.get(pk=doctor_id, role='DOCTOR')
+    except (ValueError, CustomUser.DoesNotExist):
+        return JsonResponse({'slots': []})
+
+    # Generate 30 min slots from 09:00 to 17:00
+    slots = []
+    start_time = datetime.datetime.combine(query_date, datetime.time(9, 0))
+    start_time = timezone.make_aware(start_time, timezone.get_current_timezone())
+    
+    end_time = datetime.datetime.combine(query_date, datetime.time(17, 0))
+    end_time = timezone.make_aware(end_time, timezone.get_current_timezone())
+    
+    current = start_time
+    while current < end_time:
+        slots.append(current)
+        current += datetime.timedelta(minutes=30)
+    
+    busy_dr = Appointment.objects.filter(
+        doctor=doctor,
+        status='SCHEDULED',
+        scheduled_time__gte=start_time,
+        scheduled_time__lt=end_time
+    ).values_list('scheduled_time', flat=True)
+    
+    # Filter patient unavailabilities if patient portal
+    patient_busy_slots = []
+    if request.user.is_authenticated and request.user.role == 'PATIENT':
+        patient_profile = _patient_profile_for_user(request.user)
+        if patient_profile:
+            patient_busy_slots = Appointment.objects.filter(
+                patient=patient_profile,
+                status='SCHEDULED',
+                scheduled_time__gte=start_time,
+                scheduled_time__lt=end_time
+            ).values_list('scheduled_time', flat=True)
+    
+    # Filter unavailabilities
+    blocks = DoctorUnavailability.objects.filter(
+        doctor=doctor,
+        end_time__gt=start_time,
+        start_time__lt=end_time
+    )
+
+    available = []
+    now = timezone.now()
+    
+    for slot in slots:
+        if slot < now:
+            continue
+            
+        is_conflict = False
+        conflict_details = ""
+        
+        if slot in busy_dr:
+            is_conflict = True
+            conflict_details = "Doctor already has an appointment scheduled."
+        elif slot in patient_busy_slots:
+            is_conflict = True
+            conflict_details = "You already have an appointment scheduled at this exact time."
+        
+        if not is_conflict:
+            slot_end = slot + datetime.timedelta(minutes=30)
+            for b in blocks:
+                # Overlap condition
+                if max(slot, b.start_time) < min(slot_end, b.end_time):
+                    is_conflict = True
+                    conflict_details = b.reason or "Doctor is unavailable during this time."
+                    break
+        
+        available.append({
+            'iso': slot.isoformat(),
+            'label': timezone.localtime(slot).strftime('%I:%M %p'),
+            'is_conflict': is_conflict,
+            'conflict_details': conflict_details,
+        })
+            
+    return JsonResponse({'slots': available})

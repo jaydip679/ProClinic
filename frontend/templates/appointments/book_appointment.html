@@ -1,53 +1,253 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Schedule New Appointment</h4>
+<div class="pc-section" style="max-width: 600px; margin: 0 auto;">
+    <div class="pc-card">
+        <div class="pc-card-head" style="background: linear-gradient(135deg, #0ca789, #1fa574);">
+            <h4 class="pc-h3" style="color: #fff; margin:0;">Schedule New Appointment</h4>
         </div>
-        <div class="card-body">
+        <div class="pc-card-body">
             {% if is_patient_portal %}
                 {% if patient_profile %}
-                    <div class="alert alert-info py-2">
+                    <div class="pc-alert pc-alert--info" style="margin-bottom: 20px;">
                         Booking for: <strong>{{ patient_profile }}</strong>
                     </div>
                 {% else %}
-                    <div class="alert alert-warning py-2">
+                    <div class="pc-alert pc-alert--warning" style="margin-bottom: 20px;">
                         Your patient profile is missing. Please contact reception before booking.
                     </div>
                 {% endif %}
             {% endif %}
 
             {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2">
+                <div class="pc-alert pc-alert--danger" style="margin-bottom: 20px;">
                     {{ form.non_field_errors }}
                 </div>
             {% endif %}
 
-            <form method="post">
+            <form method="post" id="bookingForm">
                 {% csrf_token %}
+                <input type="hidden" name="override_conflict" id="id_override_conflict" value="false">
                 {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
+                <div class="pc-form-row">
+                    <label class="pc-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {% if field.name == 'scheduled_time' %}
-                    <div class="form-text">Appointments are validated for doctor and patient time conflicts.</div>
+                        <div style="display: none;">
+                            {{ field }}
+                        </div>
+                        <input type="date" id="slotDatePicker" class="pc-input" style="margin-bottom: 12px;">
+                        <div id="slotContainer" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <div class="pc-muted" style="font-size: 13px;">Select a doctor and date to see available slots.</div>
+                        </div>
+                        <div class="pc-help" style="margin-top: 8px;">Appointments are validated for doctor and patient time conflicts.</div>
+                    {% else %}
+                        {{ field }}
                     {% endif %}
+                    
                     {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors }}</div>
+                    <div class="pc-inline-error">{{ field.errors }}</div>
                     {% endif %}
                 </div>
                 {% endfor %}
-                <div class="d-grid">
+                
+                <div style="margin-top: 24px;">
                     {% if is_patient_portal and not patient_profile %}
-                        <button type="button" class="btn btn-secondary" disabled>Confirm Appointment</button>
+                        <button type="button" class="pc-btn pc-btn--ghost" disabled style="width: 100%;">Confirm Appointment</button>
                     {% else %}
-                        <button type="submit" class="btn btn-success">Confirm Appointment</button>
+                        <button type="submit" id="confirmBtn" class="pc-btn pc-btn--primary" style="width: 100%;" disabled>Confirm Appointment</button>
                     {% endif %}
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Booking Conflict Modal -->
+<div class="pc-modal-backdrop" id="bookingConflictModal">
+    <div class="pc-modal" role="dialog" aria-modal="true" style="max-width: 500px;">
+        <div class="pc-modal-head">
+            <strong style="color: #24323b; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <i data-feather="alert-triangle" style="color: #E23E57;"></i> Booking Conflict
+            </strong>
+        </div>
+        <div class="pc-modal-body">
+            <div class="pc-alert pc-alert--danger" style="margin-bottom: 20px;">
+                <strong style="display: block; margin-bottom: 4px;">Exact Overlap Detected:</strong>
+                <span id="conflictOverlapReason"></span>
+            </div>
+            <div style="font-size: 14px; color: #4b5b6a; margin-bottom: 12px;">
+                <strong>Next Alternative Slot:</strong> <span id="conflictAlternativeSlot"></span>
+            </div>
+            {% if request.user.role in "ADMIN,RECEPTIONIST" %}
+            <p class="pc-muted" style="font-size: 13px; margin: 0;">As a staff member, you can override this conflict and double-book if necessary.</p>
+            {% else %}
+            <p class="pc-muted" style="font-size: 13px; margin: 0;">You cannot book this slot because it is unavailable.</p>
+            {% endif %}
+        </div>
+        <div class="pc-modal-foot">
+            <button type="button" class="pc-btn pc-btn--ghost" id="cancelConflictBtn">Cancel</button>
+            {% if request.user.role in "ADMIN,RECEPTIONIST" %}
+            <button type="button" class="pc-btn pc-btn--danger" id="overrideConflictBtn">Override & Book Anyway</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const formFields = document.querySelectorAll('#bookingForm input:not([type="hidden"]), #bookingForm select, #bookingForm textarea');
+        formFields.forEach(field => {
+            if (field.type === 'hidden' || field.type === 'submit') return;
+            if (field.tagName === 'SELECT') {
+                field.classList.add('pc-select');
+            } else if (field.tagName === 'TEXTAREA') {
+                field.classList.add('pc-textarea');
+            } else {
+                if (!field.classList.contains('pc-input')) field.classList.add('pc-input');
+            }
+        });
+
+        const doctorSelect = document.getElementById('id_doctor');
+        const actualTimeInput = document.getElementById('id_scheduled_time');
+        const datePicker = document.getElementById('slotDatePicker');
+        const slotContainer = document.getElementById('slotContainer');
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        if (datePicker) {
+            const today = new Date().toISOString().split('T')[0];
+            datePicker.min = today;
+        }
+        
+        const fetchSlots = async () => {
+            const doctorId = doctorSelect ? doctorSelect.value : null;
+            const dateStr = datePicker ? datePicker.value : null;
+            
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (actualTimeInput) actualTimeInput.value = '';
+            
+            if (!doctorId || !dateStr) {
+                if (slotContainer) slotContainer.innerHTML = '<div class="pc-muted" style="font-size: 13px;">Select a doctor and date to see available slots.</div>';
+                return;
+            }
+            
+            if (slotContainer) slotContainer.innerHTML = '<div style="font-size: 13px; color: #596578;">Loading next available appointments...</div>';
+            
+            try {
+                const resp = await fetch(`/appointments/api/slots/?doctor_id=${doctorId}&date=${dateStr}`);
+                const data = await resp.json();
+                
+                if (!slotContainer) return;
+                
+                if (!data.slots || data.slots.length === 0) {
+                    slotContainer.innerHTML = '<div class="pc-alert pc-alert--warning" style="width: 100%; padding: 8px 12px;">No slots available on this date.</div>';
+                    return;
+                }
+                
+                slotContainer.innerHTML = '<div style="width: 100%; font-size: 13px; color: #0ca789; margin-bottom: 8px;">Available slots:</div>';
+                
+                const slotGrid = document.createElement('div');
+                slotGrid.style.display = 'flex';
+                slotGrid.style.gap = '8px';
+                slotGrid.style.flexWrap = 'wrap';
+                slotGrid.style.width = '100%';
+                
+                const alternativeSlot = data.slots.find(s => !s.is_conflict);
+                const altStr = alternativeSlot ? alternativeSlot.label : 'None available today';
+                
+                data.slots.forEach(slot => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    
+                    if (slot.is_conflict) {
+                        btn.className = 'pc-btn pc-btn--ghost slot-btn slot-conflict';
+                        btn.style.color = '#e23e57';
+                        btn.style.borderColor = '#f8c4cf';
+                        btn.style.background = '#fdecef';
+                    } else {
+                        btn.className = 'pc-btn pc-btn--ghost slot-btn';
+                    }
+                    
+                    btn.style.padding = '6px 12px';
+                    btn.style.fontSize = '13px';
+                    btn.style.minHeight = 'auto';
+                    btn.innerText = slot.label;
+                    btn.dataset.iso = slot.iso;
+                    
+                    btn.addEventListener('click', () => {
+                        if (slot.is_conflict) {
+                            document.getElementById('conflictOverlapReason').innerText = slot.conflict_details;
+                            document.getElementById('conflictAlternativeSlot').innerText = altStr;
+                            const modal = document.getElementById('bookingConflictModal');
+                            modal.dataset.selectedIso = slot.iso;
+                            modal.classList.add('is-open');
+                            return;
+                        }
+                        
+                        document.querySelectorAll('.slot-btn').forEach(b => {
+                            if (b.classList.contains('slot-conflict')) {
+                                b.classList.remove('pc-btn--primary');
+                            } else {
+                                b.classList.remove('pc-btn--primary');
+                                b.classList.add('pc-btn--ghost');
+                            }
+                        });
+                        if (!slot.is_conflict) {
+                            btn.classList.remove('pc-btn--ghost');
+                            btn.classList.add('pc-btn--primary');
+                        }
+                        
+                        if (actualTimeInput) {
+                            const d = new Date(slot.iso);
+                            const pad = n => n.toString().padStart(2, '0');
+                            const localISO = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                            actualTimeInput.value = localISO;
+                            if (confirmBtn) confirmBtn.disabled = false;
+                            
+                            // Reset override flag
+                            document.getElementById('id_override_conflict').value = 'false';
+                        }
+                    });
+                    
+                    slotGrid.appendChild(btn);
+                });
+                
+                slotContainer.appendChild(slotGrid);
+                
+            } catch (err) {
+                if (slotContainer) slotContainer.innerHTML = '<div class="pc-inline-error">Error fetching slots.</div>';
+            }
+        };
+        
+        if (doctorSelect) doctorSelect.addEventListener('change', fetchSlots);
+        if (datePicker) datePicker.addEventListener('change', fetchSlots);
+        
+        // Modal logic
+        const modal = document.getElementById('bookingConflictModal');
+        const cancelBtn = document.getElementById('cancelConflictBtn');
+        const overrideBtn = document.getElementById('overrideConflictBtn');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                modal.classList.remove('is-open');
+            });
+        }
+        
+        if (overrideBtn) {
+            overrideBtn.addEventListener('click', () => {
+                document.getElementById('id_override_conflict').value = 'true';
+                
+                const iso = modal.dataset.selectedIso;
+                const d = new Date(iso);
+                const pad = n => n.toString().padStart(2, '0');
+                const localISO = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                
+                if (actualTimeInput) {
+                    actualTimeInput.value = localISO;
+                }
+                
+                document.getElementById('bookingForm').submit();
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -1,0 +1,93 @@
+<div class="pc-grid" style="gap: var(--pc-space-5); margin-bottom: var(--pc-space-6);">
+    <div class="pc-col-3 pc-card pc-stat-primary" style="box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 14px; letter-spacing: 0.3px;">My Patients</h6>
+            <div class="pc-stat-value" style="font-size: 32px; margin-top: 10px;">{{ my_patient_count }}</div>
+        </div>
+    </div>
+    <div class="pc-col-3 pc-card pc-stat-secondary" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white; box-shadow: 0 10px 30px rgba(12, 167, 137, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 14px; letter-spacing: 0.3px;">Prescriptions Issued</h6>
+            <div class="pc-stat-value" style="font-size: 32px; margin-top: 10px;">{{ my_prescription_count }}</div>
+        </div>
+    </div>
+    <div class="pc-col-3 pc-card pc-stat-warning" style="box-shadow: 0 10px 30px rgba(255, 209, 102, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 14px; letter-spacing: 0.3px;">Pending Research</h6>
+            <div class="pc-stat-value" style="font-size: 32px; margin-top: 10px;">{{ my_pending_research }}</div>
+        </div>
+    </div>
+    <div class="pc-col-3 pc-card pc-stat-secondary" style="box-shadow: 0 10px 30px rgba(74, 111, 165, 0.15); border: none; padding: 8px;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.95; font-weight: 500; font-size: 14px; letter-spacing: 0.3px;">EHR Records Loaded</h6>
+            <div class="pc-stat-value" style="font-size: 32px; margin-top: 10px;">{{ my_recent_visits|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="pc-grid" style="gap: var(--pc-space-6);">
+    <div class="pc-col-8">
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Appointment Manager</strong>
+                <a href="{% url 'doctor_appointments' %}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: 32px; font-size: 13px;">View All</a>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Patient</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Slot</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Status</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Reason</th>
+                            <th style="padding-top: 16px; padding-bottom: 16px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in upcoming_appointments %}
+                        <tr>
+                            <td style="font-weight: 600; color: #24323b; padding: 18px 24px;">{{ appt.patient }}</td>
+                            <td style="padding: 18px 14px;">{{ appt.scheduled_time|date:"M d, H:i" }}</td>
+                            <td style="padding: 18px 14px;">
+                                {% if appt.status == 'Confirmed' %}<span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Confirmed</span>
+                                {% elif appt.status == 'Pending' %}<span class="pc-chip pc-chip--pending" style="padding: 6px 12px;">Pending</span>
+                                {% elif appt.status == 'Cancelled' %}<span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Cancelled</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled" style="padding: 6px 12px;">{{ appt.status }}</span>{% endif %}
+                            </td>
+                            <td style="color: #596578; padding: 18px 14px;">{{ appt.reason|default:"-" }}</td>
+                            <td style="padding: 18px 14px;"><a href="{% url 'doctor_appointment_detail' appt.id %}" class="pc-btn pc-btn--primary" style="padding: 6px 14px; min-height: 32px; font-size: 12px; border-radius: 6px;">Open</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                                <div style="font-size: 15px; margin-bottom: 8px;">No upcoming appointments.</div>
+                                <div style="font-size: 13px; font-weight: normal;">Your schedule is clear based on available slots.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="pc-col-4">
+        <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+            <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+                <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Doctor Hub</strong>
+            </div>
+            <div class="pc-card-body" style="display: flex; flex-direction: column; gap: 12px; padding: 24px;">
+                <p style="color: #596578; margin: 0 0 12px 0; font-size: 14px; line-height: 1.5;">Quick access to your core operational workflows.</p>
+                <a href="{% url 'submit_paper' %}" class="pc-btn pc-btn--primary" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px;">
+                    <i data-feather="file-text" style="width: 16px; height: 16px;"></i> Submit Publication
+                </a>
+                <a href="{% url 'doctor_appointments' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px; border-color: #d1dde8;">
+                    <i data-feather="calendar" style="width: 16px; height: 16px;"></i> Manage Schedule
+                </a>
+                <a href="{% url 'doctor_unavailability' %}" class="pc-btn pc-btn--ghost" style="font-size: 14px; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: center; gap: 8px; color: #c82c46; border-color: #f7d4d9; background-color: #fdf2f4;">
+                    <i data-feather="clock" style="width: 16px; height: 16px;"></i> Set Unavailability
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

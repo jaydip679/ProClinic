@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ProClinic{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+    <!-- Feather Icons for solid standard icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div class="pc-app">
+        <!-- Sidebar -->
+        {% if user.is_authenticated %}
+            {% include 'layouts/sidebar.html' %}
+        {% endif %}
+
+        <!-- Main Workspace -->
+        <main class="pc-main">
+            <!-- Header -->
+            {% if user.is_authenticated and user.role != 'PATIENT' %}
+                {% include 'layouts/navbar.html' %}
+            {% endif %}
+
+            <!-- Alerts / Toasts -->
+            {% include 'layouts/alerts.html' %}
+
+            <!-- Actual Page Content -->
+            <div class="pc-container">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Initialize Feather Icons -->
+    <script>
+        feather.replace();
+        
+        // Basic toast fade-out script
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.pc-toast');
+            if(toasts.length > 0) {
+                setTimeout(() => {
+                    toasts.forEach(t => t.style.display = 'none');
+                }, 5000);
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

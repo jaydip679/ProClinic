@@ -1,0 +1,108 @@
+<aside class="pc-sidebar">
+    <div class="pc-brand">
+        <div class="pc-brand-mark">PC</div>
+        <span>ProClinic</span>
+    </div>
+    <ul class="pc-nav">
+        <li>
+            <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">
+                <i data-feather="grid"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        {% if user.role == 'ADMIN' or user.role == 'RECEPTIONIST' %}
+            <li>
+                <a href="{% url 'patient_list' %}" class="{% if 'patient' in request.path and 'profile' not in request.path %}is-active{% endif %}">
+                    <i data-feather="users"></i>
+                    <span>Patients</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if user.role == 'DOCTOR' %}
+            <li>
+                <a href="{% url 'doctor_appointments' %}" class="{% if 'appointments' in request.path %}is-active{% endif %}">
+                    <i data-feather="calendar"></i>
+                    <span>Appointments</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'doctor_unavailability' %}" class="{% if 'unavailability' in request.path %}is-active{% endif %}">
+                    <i data-feather="clock"></i>
+                    <span>Availability</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'doctor_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
+                    <i data-feather="user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'submit_paper' %}" class="{% if 'paper' in request.path %}is-active{% endif %}">
+                    <i data-feather="file-text"></i>
+                    <span>Research</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if user.role == 'ADMIN' or user.role == 'RECEPTIONIST' or user.role == 'PATIENT' %}
+            <li>
+                <a href="{% url 'book_appointment' %}" class="{% if 'book' in request.path %}is-active{% endif %}">
+                    <i data-feather="calendar"></i>
+                    <span>Book Appointment</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if user.role == 'PATIENT' %}
+            <li>
+                <a href="{% url 'patient_profile' %}" class="{% if 'profile' in request.path %}is-active{% endif %}">
+                    <i data-feather="user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'patient_invoices' %}" class="{% if 'invoices' in request.path %}is-active{% endif %}">
+                    <i data-feather="file-text"></i>
+                    <span>My Bills</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if user.role == 'ACCOUNTANT' or user.role == 'ADMIN' %}
+            <li>
+                <a href="{% url 'generate_invoice' %}" class="{% if 'invoice' in request.path %}is-active{% endif %}">
+                    <i data-feather="credit-card"></i>
+                    <span>Billing</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if user.role == 'ADMIN' %}
+            <li>
+                <a href="{% url 'create_staff_account' %}" class="{% if 'staff' in request.path %}is-active{% endif %}">
+                    <i data-feather="shield"></i>
+                    <span>Staff Accounts</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'audit_log_list' %}" class="{% if 'audit' in request.path %}is-active{% endif %}">
+                    <i data-feather="activity"></i>
+                    <span>Audit Logs</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+    
+    <div style="margin-top: auto; padding-top: var(--pc-space-5);">
+        <div style="font-size: 12px; color: #6f8295; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">User Session</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.15); border-radius: 10px; padding: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="pc-avatar" style="width: 28px; height: 28px; font-size: 11px;">{{ user.username.0|upper|default:"U" }}</div>
+                <span style="font-size: 13px; font-weight: 500; color: #fff; width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ user.username }}</span>
+            </div>
+            <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" style="background: transparent; border: 0; color: #d66479; cursor: pointer; padding: 4px;" title="Log Out">
+                    <i data-feather="log-out" style="width: 16px; height: 16px;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

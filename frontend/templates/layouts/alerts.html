@@ -1,0 +1,18 @@
+{% if messages %}
+    <div class="pc-toast-stack">
+        {% for message in messages %}
+            <div class="pc-toast" style="display: flex; gap: 10px; align-items: center;">
+                {% if message.tags == 'success' %}
+                    <i data-feather="check-circle" style="color: #0b6e59; width: 18px; height: 18px;"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                    <i data-feather="alert-circle" style="color: #e23e57; width: 18px; height: 18px;"></i>
+                {% elif message.tags == 'warning' %}
+                    <i data-feather="alert-triangle" style="color: #ffd166; width: 18px; height: 18px;"></i>
+                {% else %}
+                    <i data-feather="info" style="color: #2f80ed; width: 18px; height: 18px;"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

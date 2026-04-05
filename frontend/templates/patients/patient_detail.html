@@ -1,68 +1,151 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'patient_list' %}">Patients</a></li>
-            <li class="breadcrumb-item active">{{ patient.first_name }} {{ patient.last_name }}</li>
-        </ol>
-    </nav>
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost" style="padding: 6px; min-height: 32px;"><i data-feather="arrow-left" style="width: 16px; height: 16px;"></i></a>
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">{{ patient.first_name }} {{ patient.last_name }}</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Patient Medical Record & EHR</p>
+        </div>
+    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body text-center">
-                    <div class="rounded-circle bg-primary text-white d-inline-block p-4 mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+    <div class="pc-grid">
+        <div class="pc-col-4">
+            <div class="pc-card pc-patient-tone" style="border-color: #e4eaf2; border-radius: 16px;">
+                <div class="pc-card-body" style="text-align: center; padding: 32px 24px;">
+                    <div class="pc-avatar" style="width: 80px; height: 80px; font-size: 28px; margin: 0 auto 16px; background: #2c3e91; color: #fff;">
                         {{ patient.first_name|first }}{{ patient.last_name|first }}
                     </div>
-                    <h4>{{ patient.first_name }} {{ patient.last_name }}</h4>
-                    <span class="badge bg-danger">{{ patient.blood_group }}</span>
-                    <hr>
-                    <p class="text-start"><strong>DOB:</strong> {{ patient.date_of_birth }}</p>
-                    <p class="text-start"><strong>Contact:</strong> {{ patient.contact_number }}</p>
-                    <p class="text-start"><strong>Address:</strong> {{ patient.address }}</p>
+                    <h3 class="pc-h3" style="margin-bottom: 8px;">{{ patient.first_name }} {{ patient.last_name }}</h3>
+                    <div style="margin-bottom: 24px;">
+                        <span class="pc-chip pc-chip--danger">{{ patient.blood_group }}</span>
+                    </div>
+                    
+                    <div style="text-align: left; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px; display: grid; gap: 12px; font-size: 14px;">
+                        <div style="display: flex; gap: 12px;">
+                            <i data-feather="calendar" style="width: 16px; height: 16px; color: #6f8295; flex-shrink: 0; margin-top:2px;"></i>
+                            <div><strong style="display: block; color: #37485a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">DOB</strong> {{ patient.date_of_birth }}</div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <i data-feather="phone" style="width: 16px; height: 16px; color: #6f8295; flex-shrink: 0; margin-top:2px;"></i>
+                            <div><strong style="display: block; color: #37485a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Contact</strong> {{ patient.contact_number }}</div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <i data-feather="map-pin" style="width: 16px; height: 16px; color: #6f8295; flex-shrink: 0; margin-top:2px;"></i>
+                            <div><strong style="display: block; color: #37485a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Address</strong> {{ patient.address }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
-                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#appointments">Appointments</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#prescriptions">Prescriptions</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#billing">Billing</button></li>
-                    </ul>
-                </div>
-                <div class="card-body tab-content">
-                    <div class="tab-pane fade show active" id="appointments">
-                        <ul class="list-group list-group-flush">
+        <div class="pc-col-8">
+            <div class="pc-pill-tabs" style="margin-bottom: 20px;">
+                <button type="button" class="tab-btn is-active" data-target="ehr">EHR Timeline</button>
+                <button type="button" class="tab-btn" data-target="prescriptions">Prescriptions</button>
+                <button type="button" class="tab-btn" data-target="billing">Billing Info</button>
+            </div>
+
+            <div class="pc-card" style="border-radius: 16px;">
+                <div class="pc-card-body pb-0 pt-0" style="padding: 0;">
+                    
+                    <!-- EHR Timeline Tab -->
+                    <div id="tab-ehr" class="tab-content" style="padding: 24px;">
+                        <h4 class="pc-h3" style="margin-top:0; margin-bottom: 24px;">Medical History</h4>
+                        <div style="position: relative; padding-left: 20px;">
+                            <div style="position: absolute; left: 6px; top: 8px; bottom: 0; width: 2px; background: #ecf1f7;"></div>
+                            
                             {% for appt in appointments %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ appt.scheduled_time|date:"M d, Y H:i" }} - Dr. {{ appt.doctor.last_name }}
-                                <span class="badge bg-secondary">{{ appt.status }}</span>
-                            </li>
+                            <div style="position: relative; margin-bottom: 24px;">
+                                <div style="position: absolute; left: -24px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: {% if appt.status == 'COMPLETED' %}#0ca789{% elif appt.status == 'CANCELLED' %}#e23e57{% else %}#2c3e91{% endif %}; border: 3px solid #fff; box-shadow: 0 0 0 1px #dbe3ed;"></div>
+                                <div class="pc-card" style="box-shadow: none; border-color: #e4eaf2; margin-left: 12px;">
+                                    <div class="pc-card-head" style="padding: 12px 16px; background: #f8fbfd;">
+                                        <strong style="color: #24323b;">{{ appt.scheduled_time|date:"M d, Y" }}</strong>
+                                        <span style="font-size: 13px; color: #6f8295; margin-left: 8px;">{{ appt.scheduled_time|date:"H:i" }}</span>
+                                        <span class="pc-chip {% if appt.status == 'COMPLETED' %}pc-chip--completed{% elif appt.status == 'CANCELLED' %}pc-chip--danger{% elif appt.status == 'SCHEDULED' %}pc-chip--confirmed{% else %}pc-chip--scheduled{% endif %}" style="margin-left: auto;">{{ appt.get_status_display }}</span>
+                                    </div>
+                                    <div class="pc-card-body" style="padding: 16px;">
+                                        <div style="margin-bottom: 8px;"><strong style="color: #37485a;">Doctor:</strong> Dr. {{ appt.doctor.last_name }}</div>
+                                        {% if appt.reason %}
+                                            <div style="color: #4b5f74; font-size: 14px; line-height: 1.5; background: #f4f7f9; padding: 10px; border-radius: 8px;">
+                                                <strong style="display: block; font-size: 12px; text-transform: uppercase; color: #8e9aab; margin-bottom: 4px;">Reason for Visit</strong>
+                                                {{ appt.reason }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                             {% empty %}
-                            <li class="list-group-item text-muted">No appointment history.</li>
+                            <div class="pc-muted">No appointment history.</div>
                             {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="tab-pane fade" id="prescriptions">
-                        {% for rx in prescriptions %}
-                        <div class="border-bottom mb-3 pb-2">
-                            <h6>{{ rx.created_at|date:"M d, Y" }} <small class="text-muted">by Dr. {{ rx.doctor.last_name }}</small></h6>
-                            <p class="small mb-0">{{ rx.notes|truncatechars:100 }}</p>
                         </div>
-                        {% empty %}
-                        <p class="text-muted">No prescriptions found.</p>
-                        {% endfor %}
                     </div>
-                    <div class="tab-pane fade" id="billing">
+
+                    <!-- Prescriptions Tab -->
+                    <div id="tab-prescriptions" class="tab-content pc-hidden">
+                        <div class="pc-table-wrap">
+                            <table class="pc-table" style="min-width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 16px 24px;">Date</th>
+                                        <th style="padding: 16px 14px;">Doctor</th>
+                                        <th style="padding: 16px 14px;">Notes</th>
+                                        <th style="padding: 16px 24px; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rx in prescriptions %}
+                                    <tr>
+                                        <td style="padding: 16px 24px; font-weight: 500;">{{ rx.created_at|date:"M d, Y" }}</td>
+                                        <td style="padding: 16px 14px;">Dr. {{ rx.doctor.last_name }}</td>
+                                        <td style="padding: 16px 14px; color: #596578;" title="{{ rx.notes }}">{{ rx.notes|truncatechars:50 }}</td>
+                                        <td style="padding: 16px 24px; text-align: right;">
+                                            {% if rx.pdf_file %}
+                                            <a href="{{ rx.pdf_file.url }}" class="pc-btn pc-btn--ghost" target="_blank" style="padding: 6px 12px; min-height: 32px; font-size: 13px;">View PDF</a>
+                                            {% else %}
+                                            <span style="color: #98a1b3; font-size: 12px;">No File</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; color: #8e9aab; padding: 40px 20px;">No prescriptions available.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
+
+                    <!-- Billing Tab -->
+                    <div id="tab-billing" class="tab-content pc-hidden" style="padding: 24px;">
+                        <p class="pc-muted">Billing history integration pending.</p>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active classes
+                tabs.forEach(t => t.classList.remove('is-active'));
+                contents.forEach(c => c.classList.add('pc-hidden'));
+
+                // Add active class to clicked
+                tab.classList.add('is-active');
+                const targetId = 'tab-' + tab.dataset.target;
+                document.getElementById(targetId).classList.remove('pc-hidden');
+            });
+        });
+    });
+</script>
 {% endblock %}

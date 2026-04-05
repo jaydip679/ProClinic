@@ -1,0 +1,72 @@
+<div class="pc-grid mb-4">
+    <div class="pc-col-4 pc-card pc-stat-primary">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Today's Bookings</h6>
+            <div class="pc-stat-value">{{ today_bookings }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-secondary" style="background: linear-gradient(160deg, #1fa574, #0ca789); color: white;">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">Total Slots Today</h6>
+            <div class="pc-stat-value">{{ total_today_slots }}</div>
+        </div>
+    </div>
+    <div class="pc-col-4 pc-card pc-stat-warning">
+        <div class="pc-card-body">
+            <h6 style="margin:0; opacity: 0.9; font-weight: 500;">New Registrations (7d)</h6>
+            <div class="pc-stat-value">{{ new_patient_registrations }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="pc-grid">
+    <div class="pc-col-7">
+        <div class="pc-card">
+            <div class="pc-card-head">
+                <strong style="color: #37485a;">Today's Walk-in & Follow-up Queue</strong>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead><tr><th>Patient</th><th>Doctor</th><th>Time</th></tr></thead>
+                    <tbody>
+                        {% for appt in walk_in_followups %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ appt.patient }}</td>
+                            <td>{{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
+                            <td style="color: #596578;">{{ appt.scheduled_time|date:"M d, H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" style="text-align: center; color: #98a1b3; padding: 32px;">No follow-up entries for today.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="pc-col-5">
+        <div class="pc-card" style="height: 100%;">
+            <div class="pc-card-head">
+                <strong style="color: #37485a;">Staff Coordination</strong>
+            </div>
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead><tr><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for appt in reschedule_queue %}
+                        <tr>
+                            <td style="font-weight: 500;">{{ appt.patient }}</td>
+                            <td>{{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
+                            <td>
+                                {% if appt.status == 'Pending' %}<span class="pc-chip pc-chip--pending">Needs Action</span>
+                                {% else %}<span class="pc-chip pc-chip--scheduled">{{ appt.status }}</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" style="text-align: center; color: #98a1b3; padding: 24px;">No reschedule tickets.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

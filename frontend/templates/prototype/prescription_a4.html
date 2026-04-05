@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prescription Template A4</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'proclinic/design-system.css' %}">
+</head>
+<body>
+  <div class="pc-a4">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h1 style="font-size:28px;">ProClinic</h1>
+        <p style="margin:4px 0 0;color:#5a6678;">Digital Prescription</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0;"><strong>Prescription ID:</strong> RX-311</p>
+        <p style="margin:0;"><strong>Date:</strong> {{ today|default:'2026-02-20' }}</p>
+      </div>
+    </div>
+
+    <hr style="border:0;border-top:1px solid #dce4ed;margin:14px 0;">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <h3 style="font-size:16px;margin-bottom:6px;">Patient</h3>
+        <p style="margin:0;">Nitin Sharma</p>
+        <p style="margin:0;">DOB: 1998-08-12</p>
+        <p style="margin:0;">Blood Group: O+</p>
+        <p style="margin:0;">Allergy: Penicillin</p>
+      </div>
+      <div>
+        <h3 style="font-size:16px;margin-bottom:6px;">Doctor</h3>
+        <p style="margin:0;">Dr. A. Desai</p>
+        <p style="margin:0;">Appointment: 2026-02-20 10:30-11:00</p>
+        <p style="margin:0;">Department: General Medicine</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px;margin:18px 0 8px;">Medicine Plan</h3>
+    <table>
+      <thead>
+        <tr><th>Medicine</th><th>Dosage</th><th>Instructions</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Paracetamol 500mg</td><td>500mg</td><td>1 tab TDS after food</td><td>5 days</td></tr>
+        <tr><td>Vitamin C</td><td>500mg</td><td>1 tab daily</td><td>7 days</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:16px;margin:18px 0 8px;">Clinical Notes</h3>
+    <p style="margin:0;border:1px solid #dce4ed;border-radius:10px;padding:10px;">
+      Mild viral symptoms. Hydration advised. Review in 3 days if fever persists.
+    </p>
+
+    <div style="display:flex;justify-content:space-between;margin-top:36px;">
+      <div>
+        <p style="margin:0;color:#617085;font-size:12px;">Digitally signed by ProClinic EHR</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0;">Dr. A. Desai</p>
+        <p style="margin:0;font-size:12px;color:#617085;">License #PC-DOC-447</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
