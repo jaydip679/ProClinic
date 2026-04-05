@@ -1,0 +1,56 @@
+# Version control
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Environment / secrets
+.env
+backend/.env
+*.env
+
+# SQLite database (use PostgreSQL in Docker)
+*.sqlite3
+db.sqlite3
+
+# IDE / editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Compiled assets / build output
+*.egg-info/
+dist/
+build/
+
+# Documentation
+docs/
+deliverables/
+
+# Node (if any frontend tooling)
+node_modules/
+
+# Media uploads (managed by Docker volume)
+frontend/media/
+
+# Logs
+*.log

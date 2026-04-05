@@ -4,7 +4,8 @@ from pathlib import Path
 
 # 1. Initialize environment variables
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    DATABASE_URL=(str, None),
 )
 
 # 2. Build paths inside the project
@@ -73,13 +74,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# 8. Database configuration (SQLite for now, Postgres later)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# 8. Database configuration
+# If DATABASE_URL is set (e.g. in Docker), use PostgreSQL; otherwise use SQLite.
+_database_url = env('DATABASE_URL', default=None)
+if _database_url:
+    DATABASES = {
+        'default': env.db_url('DATABASE_URL')
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # 9. Password validation
 AUTH_PASSWORD_VALIDATORS = [
