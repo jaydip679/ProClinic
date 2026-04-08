@@ -62,36 +62,7 @@
     </div>
 </div>
 
-<!-- Booking Conflict Modal -->
-<div class="pc-modal-backdrop" id="bookingConflictModal">
-    <div class="pc-modal" role="dialog" aria-modal="true" style="max-width: 500px;">
-        <div class="pc-modal-head">
-            <strong style="color: #24323b; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                <i data-feather="alert-triangle" style="color: #E23E57;"></i> Booking Conflict
-            </strong>
-        </div>
-        <div class="pc-modal-body">
-            <div class="pc-alert pc-alert--danger" style="margin-bottom: 20px;">
-                <strong style="display: block; margin-bottom: 4px;">Exact Overlap Detected:</strong>
-                <span id="conflictOverlapReason"></span>
-            </div>
-            <div style="font-size: 14px; color: #4b5b6a; margin-bottom: 12px;">
-                <strong>Next Alternative Slot:</strong> <span id="conflictAlternativeSlot"></span>
-            </div>
-            {% if request.user.role in "ADMIN,RECEPTIONIST" %}
-            <p class="pc-muted" style="font-size: 13px; margin: 0;">As a staff member, you can override this conflict and double-book if necessary.</p>
-            {% else %}
-            <p class="pc-muted" style="font-size: 13px; margin: 0;">You cannot book this slot because it is unavailable.</p>
-            {% endif %}
-        </div>
-        <div class="pc-modal-foot">
-            <button type="button" class="pc-btn pc-btn--ghost" id="cancelConflictBtn">Cancel</button>
-            {% if request.user.role in "ADMIN,RECEPTIONIST" %}
-            <button type="button" class="pc-btn pc-btn--danger" id="overrideConflictBtn">Override & Book Anyway</button>
-            {% endif %}
-        </div>
-    </div>
-</div>
+<!-- Removed Conflict Modal because conflicts are now actively stripped out by the backend -->
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -107,23 +78,67 @@
             }
         });
 
+        const patientSelect = document.getElementById('id_patient');
         const doctorSelect = document.getElementById('id_doctor');
         const actualTimeInput = document.getElementById('id_scheduled_time');
         const datePicker = document.getElementById('slotDatePicker');
         const slotContainer = document.getElementById('slotContainer');
         const confirmBtn = document.getElementById('confirmBtn');
+        const reasonInput = document.getElementById('id_reason');
         
+        // Rows wrappers
+        const patientRow = patientSelect ? patientSelect.closest('.pc-form-row') : null;
+        const doctorRow = doctorSelect ? doctorSelect.closest('.pc-form-row') : null;
+        const dateRow = datePicker ? datePicker.closest('.pc-form-row') : null;
+        const reasonRow = reasonInput ? reasonInput.closest('.pc-form-row') : null;
+
         if (datePicker) {
             const today = new Date().toISOString().split('T')[0];
             datePicker.min = today;
         }
+
+        const enforceSteps = () => {
+            // STEP 1: Patient (if present)
+            if (patientRow) {
+                if (!patientSelect.value) {
+                    if (doctorRow) doctorRow.style.display = 'none';
+                    if (dateRow) dateRow.style.display = 'none';
+                    if (reasonRow) reasonRow.style.display = 'none';
+                    return;
+                }
+            }
+
+            // STEP 2: Doctor
+            if (doctorRow) doctorRow.style.display = 'block';
+            if (!doctorSelect.value) {
+                if (dateRow) dateRow.style.display = 'none';
+                if (reasonRow) reasonRow.style.display = 'none';
+                return;
+            }
+
+            // STEP 3: Date
+            if (dateRow) dateRow.style.display = 'block';
+            if (!datePicker.value) {
+                if (reasonRow) reasonRow.style.display = 'none';
+                return;
+            }
+
+            // STEP 4/5: Slots / Reason
+            if (actualTimeInput && !actualTimeInput.value) {
+                if (reasonRow) reasonRow.style.display = 'none';
+                return;
+            }
+            if (reasonRow) reasonRow.style.display = 'block';
+        };
         
         const fetchSlots = async () => {
             const doctorId = doctorSelect ? doctorSelect.value : null;
             const dateStr = datePicker ? datePicker.value : null;
+            const patientId = patientSelect ? patientSelect.value : '';
             
             if (confirmBtn) confirmBtn.disabled = true;
             if (actualTimeInput) actualTimeInput.value = '';
+            enforceSteps();
             
             if (!doctorId || !dateStr) {
                 if (slotContainer) slotContainer.innerHTML = '<div class="pc-muted" style="font-size: 13px;">Select a doctor and date to see available slots.</div>';
@@ -133,10 +148,16 @@
             if (slotContainer) slotContainer.innerHTML = '<div style="font-size: 13px; color: #596578;">Loading next available appointments...</div>';
             
             try {
-                const resp = await fetch(`/appointments/api/slots/?doctor_id=${doctorId}&date=${dateStr}`);
+                const resp = await fetch(`/appointments/api/slots/?doctor_id=${doctorId}&date=${dateStr}&patient_id=${patientId}`);
                 const data = await resp.json();
                 
                 if (!slotContainer) return;
+                
+                if (data.error) {
+                    slotContainer.innerHTML = `<div class="pc-alert pc-alert--danger" style="width: 100%; padding: 8px 12px;"><i data-feather="alert-circle" style="width:16px;"></i> ${data.error}</div>`;
+                    feather.replace();
+                    return;
+                }
                 
                 if (!data.slots || data.slots.length === 0) {
                     slotContainer.innerHTML = '<div class="pc-alert pc-alert--warning" style="width: 100%; padding: 8px 12px;">No slots available on this date.</div>';
@@ -151,22 +172,10 @@
                 slotGrid.style.flexWrap = 'wrap';
                 slotGrid.style.width = '100%';
                 
-                const alternativeSlot = data.slots.find(s => !s.is_conflict);
-                const altStr = alternativeSlot ? alternativeSlot.label : 'None available today';
-                
                 data.slots.forEach(slot => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    
-                    if (slot.is_conflict) {
-                        btn.className = 'pc-btn pc-btn--ghost slot-btn slot-conflict';
-                        btn.style.color = '#e23e57';
-                        btn.style.borderColor = '#f8c4cf';
-                        btn.style.background = '#fdecef';
-                    } else {
-                        btn.className = 'pc-btn pc-btn--ghost slot-btn';
-                    }
-                    
+                    btn.className = 'pc-btn pc-btn--ghost slot-btn';
                     btn.style.padding = '6px 12px';
                     btn.style.fontSize = '13px';
                     btn.style.minHeight = 'auto';
@@ -174,35 +183,17 @@
                     btn.dataset.iso = slot.iso;
                     
                     btn.addEventListener('click', () => {
-                        if (slot.is_conflict) {
-                            document.getElementById('conflictOverlapReason').innerText = slot.conflict_details;
-                            document.getElementById('conflictAlternativeSlot').innerText = altStr;
-                            const modal = document.getElementById('bookingConflictModal');
-                            modal.dataset.selectedIso = slot.iso;
-                            modal.classList.add('is-open');
-                            return;
-                        }
-                        
                         document.querySelectorAll('.slot-btn').forEach(b => {
-                            if (b.classList.contains('slot-conflict')) {
-                                b.classList.remove('pc-btn--primary');
-                            } else {
-                                b.classList.remove('pc-btn--primary');
-                                b.classList.add('pc-btn--ghost');
-                            }
+                            b.classList.remove('pc-btn--primary');
+                            b.classList.add('pc-btn--ghost');
                         });
-                        if (!slot.is_conflict) {
-                            btn.classList.remove('pc-btn--ghost');
-                            btn.classList.add('pc-btn--primary');
-                        }
+                        btn.classList.remove('pc-btn--ghost');
+                        btn.classList.add('pc-btn--primary');
                         
                         if (actualTimeInput) {
-                            const d = new Date(slot.iso);
-                            const pad = n => n.toString().padStart(2, '0');
-                            const localISO = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                            actualTimeInput.value = localISO;
+                            actualTimeInput.value = slot.iso;
                             if (confirmBtn) confirmBtn.disabled = false;
-                            
+                            enforceSteps();
                             // Reset override flag
                             document.getElementById('id_override_conflict').value = 'false';
                         }
@@ -217,37 +208,29 @@
                 if (slotContainer) slotContainer.innerHTML = '<div class="pc-inline-error">Error fetching slots.</div>';
             }
         };
+
+        if (patientSelect) patientSelect.addEventListener('change', () => {
+            // changing patient un-sets everything below
+            if (doctorSelect) doctorSelect.value = '';
+            if (datePicker) datePicker.value = '';
+            if (actualTimeInput) actualTimeInput.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (slotContainer) slotContainer.innerHTML = '<div class="pc-muted" style="font-size: 13px;">Select a doctor and date to see available slots.</div>';
+            enforceSteps();
+        });
         
-        if (doctorSelect) doctorSelect.addEventListener('change', fetchSlots);
+        if (doctorSelect) doctorSelect.addEventListener('change', () => {
+            if (datePicker) datePicker.value = '';
+            if (actualTimeInput) actualTimeInput.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+            enforceSteps();
+            fetchSlots();
+        });
+
         if (datePicker) datePicker.addEventListener('change', fetchSlots);
-        
-        // Modal logic
-        const modal = document.getElementById('bookingConflictModal');
-        const cancelBtn = document.getElementById('cancelConflictBtn');
-        const overrideBtn = document.getElementById('overrideConflictBtn');
-        
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                modal.classList.remove('is-open');
-            });
-        }
-        
-        if (overrideBtn) {
-            overrideBtn.addEventListener('click', () => {
-                document.getElementById('id_override_conflict').value = 'true';
-                
-                const iso = modal.dataset.selectedIso;
-                const d = new Date(iso);
-                const pad = n => n.toString().padStart(2, '0');
-                const localISO = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                
-                if (actualTimeInput) {
-                    actualTimeInput.value = localISO;
-                }
-                
-                document.getElementById('bookingForm').submit();
-            });
-        }
+
+        // Run on mount to hide correctly
+        enforceSteps();
     });
 </script>
 {% endblock %}

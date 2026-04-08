@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}My Lab Reports — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Page header #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">My Lab Reports</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Upload and view your diagnostic test results (PDF only, max 5 MB)</p>
+        </div>
+        {% if profile %}
+        <button id="showUploadBtn" class="pc-btn pc-btn--primary"
+                style="border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <i data-feather="upload" style="width: 16px; height: 16px;"></i> Upload Report
+        </button>
+        {% endif %}
+    </div>
+
+    {# Upload form card (hidden by default) #}
+    {% if profile %}
+    <div id="uploadFormWrap" style="display: none; margin-bottom: var(--pc-space-5);">
+        <div class="pc-card" style="border-radius: 14px; border-color: #c5cef0; box-shadow: 0 4px 20px rgba(44,62,145,0.08);">
+            <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f); border-radius: 14px 14px 0 0; padding: 16px 24px;">
+                <span style="color: #fff; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                    <i data-feather="upload-cloud" style="width: 16px; height: 16px;"></i>
+                    Upload New Lab Report
+                </span>
+                <button type="button" id="hideUploadBtn"
+                        style="background: transparent; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px; line-height: 1; border-radius: 6px;">
+                    <i data-feather="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            <div class="pc-card-body" style="padding: 24px;">
+                <form method="post" enctype="multipart/form-data" action="{% url 'patient_lab_reports' %}" id="uploadForm">
+                    {% csrf_token %}
+                    <div style="display: grid; grid-template-columns: 1fr 180px 200px; gap: 16px; margin-bottom: 20px; align-items: end;">
+                        <div class="pc-form-row" style="margin: 0;">
+                            <label class="pc-label" for="test_name">
+                                Test / Report Name <span style="color: #e23e57;">*</span>
+                            </label>
+                            <input type="text" id="test_name" name="test_name" class="pc-input"
+                                   placeholder="e.g. Complete Blood Count, Lipid Panel"
+                                   value="{{ request.POST.test_name }}" required
+                                   style="border-radius: 8px;">
+                        </div>
+                        <div class="pc-form-row" style="margin: 0;">
+                            <label class="pc-label" for="report_date">
+                                Test Date <span style="color: #e23e57;">*</span>
+                            </label>
+                            <input type="date" id="report_date" name="report_date" class="pc-input"
+                                   value="{{ request.POST.report_date }}" required
+                                   max="{% now 'Y-m-d' %}"
+                                   style="border-radius: 8px;">
+                        </div>
+                        <div class="pc-form-row" style="margin: 0;">
+                            <label class="pc-label" for="pdf_file">
+                                PDF File <span style="color: #e23e57;">*</span>
+                                <span style="font-weight: 400; color: #98a1b3; font-size: 11px; margin-left: 4px;">(max 5 MB)</span>
+                            </label>
+                            <input type="file" id="pdf_file" name="pdf_file" class="pc-input" accept=".pdf" required
+                                   style="border-radius: 8px; padding: 7px 12px;">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" id="cancelUploadBtn" class="pc-btn pc-btn--ghost"
+                                style="border-radius: 8px;">Cancel</button>
+                        <button type="submit" class="pc-btn pc-btn--primary"
+                                style="border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                            <i data-feather="upload-cloud" style="width: 15px; height: 15px;"></i>
+                            Upload Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Report list #}
+    <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+        {% if not profile %}
+        {# No profile error inline #}
+        <div style="text-align: center; padding: 60px 20px; color: #8e9aab;">
+            <i data-feather="alert-circle" style="width: 48px; height: 48px; display: block; margin: 0 auto 14px; opacity: 0.4; color: #e23e57;"></i>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #37485a;">Patient Profile Not Found</div>
+            <div style="font-size: 14px; margin-bottom: 20px;">Please contact reception to register your patient profile.</div>
+            <a href="{% url 'patient_profile' %}" class="pc-btn pc-btn--primary" style="border-radius: 10px;">Update Profile</a>
+        </div>
+        {% else %}
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
+                <thead style="background: #f7fafc;">
+                    <tr>
+                        <th style="padding: 16px 24px;">Test Name</th>
+                        <th style="padding: 16px 14px;">Test Date</th>
+                        <th style="padding: 16px 14px;">Uploaded</th>
+                        <th style="padding: 16px 14px;">Review Status</th>
+                        <th style="padding: 16px 24px; text-align: right;">Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td style="padding: 18px 24px;">
+                            <div style="font-weight: 600; color: #1a2e3b;">{{ report.test_name }}</div>
+                        </td>
+                        <td style="padding: 18px 14px; color: #596578;">{{ report.report_date|date:"M d, Y" }}</td>
+                        <td style="padding: 18px 14px;">
+                            <div style="color: #596578; font-size: 13px;">{{ report.uploaded_at|date:"M d, Y" }}</div>
+                            <div style="color: #98a1b3; font-size: 11px; margin-top: 2px;">{{ report.uploaded_at|date:"H:i" }}</div>
+                        </td>
+                        <td style="padding: 18px 14px;">
+                            {% if report.status == 'verified' %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 5px 12px; font-size: 12px; display: flex; align-items: center; gap: 4px; display: inline-flex;">
+                                    <i data-feather="shield" style="width: 12px; height: 12px;"></i> Verified
+                                </span>
+                            {% elif report.status == 'archived' %}
+                                <span class="pc-chip" style="padding: 5px 12px; font-size: 12px; background: #f0f4f8; color: #596578;">Archived</span>
+                            {% else %}
+                                <span class="pc-chip" style="padding: 5px 12px; font-size: 12px; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;">Pending Review</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 18px 24px; text-align: right;">
+                            <a href="{{ report.pdf_file.url }}" target="_blank"
+                               class="pc-btn pc-btn--ghost"
+                               style="padding: 6px 14px; min-height: 30px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i data-feather="download" style="width: 13px; height: 13px;"></i> View PDF
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 80px 20px; color: #8e9aab;">
+                            <i data-feather="folder" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+                            <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">No lab reports yet</div>
+                            <div style="font-size: 14px; margin-bottom: 24px;">Upload your first lab result using the button above.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const wrap = document.getElementById('uploadFormWrap');
+    const showBtn = document.getElementById('showUploadBtn');
+    const hideBtn = document.getElementById('hideUploadBtn');
+    const cancelBtn = document.getElementById('cancelUploadBtn');
+    if (!wrap) return;
+
+    function showForm() {
+        wrap.style.display = 'block';
+        showBtn.style.display = 'none';
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function hideForm() {
+        wrap.style.display = 'none';
+        showBtn.style.display = 'flex';
+    }
+
+    showBtn.addEventListener('click', showForm);
+    if (hideBtn) hideBtn.addEventListener('click', hideForm);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideForm);
+
+    // Client-side file validation
+    const fileInput = document.getElementById('pdf_file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Only PDF files are accepted. Please select a .pdf file.');
+                this.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                const mb = (file.size / (1024 * 1024)).toFixed(1);
+                alert(`File is too large (${mb} MB). Maximum allowed size is 5 MB.`);
+                this.value = '';
+                return;
+            }
+        });
+    }
+
+    // Keep form open on errors or after validation messages
+    {% if messages %}showForm();{% endif %}
+});
+</script>
+{% endblock %}

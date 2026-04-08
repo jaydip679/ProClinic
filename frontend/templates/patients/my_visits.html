@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}My Visit History — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">My Visit History</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Your complete clinical visit records — provided by your care team</p>
+        </div>
+        {% if profile %}
+        <a href="{% url 'patient_my_prescriptions' %}" class="pc-btn pc-btn--ghost"
+           style="font-size: 13px; border-radius: 9px; display: flex; align-items: center; gap: 7px;">
+            <i data-feather="file-text" style="width: 14px; height: 14px;"></i> My Prescriptions
+        </a>
+        {% endif %}
+    </div>
+
+    {# No profile #}
+    {% if not profile %}
+    <div class="pc-card" style="border-radius: 14px; border-color: #f7d4d9;">
+        <div class="pc-card-body" style="padding: 32px; display: flex; gap: 16px; align-items: flex-start;">
+            <div style="background: #e23e57; color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-feather="alert-triangle" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 700; color: #1a2e3b; font-size: 15px; margin-bottom: 6px;">Patient Profile Not Found</div>
+                <div style="color: #596578; font-size: 14px; line-height: 1.6;">
+                    Your patient profile hasn't been set up yet. Please visit reception or
+                    <a href="{% url 'patient_profile' %}" style="color: #2c3e91; font-weight: 600;">update your profile</a>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# No visits yet #}
+    {% elif not visits %}
+    <div class="pc-card" style="border-radius: 14px; box-shadow: var(--pc-shadow-soft);">
+        <div style="text-align: center; padding: 90px 20px; color: #8e9aab;">
+            <i data-feather="calendar" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+            <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">No visits recorded yet</div>
+            <div style="font-size: 14px; margin-bottom: 24px;">Your clinical visit notes will appear here after your first completed appointment.</div>
+            <a href="{% url 'book_appointment' %}" class="pc-btn pc-btn--primary" style="border-radius: 10px;">
+                Book an Appointment
+            </a>
+        </div>
+    </div>
+
+    {# Visit timeline #}
+    {% else %}
+    <div style="position: relative; padding-left: 28px;">
+        {# Timeline vertical line #}
+        <div style="position: absolute; left: 9px; top: 10px; bottom: 20px; width: 2px; background: linear-gradient(to bottom, #2c3e91, #ecf1f7);"></div>
+
+        {% for visit in visits %}
+        <div style="position: relative; margin-bottom: 24px;">
+
+            {# Timeline dot #}
+            <div style="position: absolute; left: -28px; top: 6px; width: 18px; height: 18px; border-radius: 50%;
+                        background: #2c3e91;
+                        border: 3px solid #fff; box-shadow: 0 0 0 2px #c5cef0;">
+            </div>
+
+            <div class="pc-card" style="border-radius: 12px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+
+                {# Visit header #}
+                <div class="pc-card-head" style="background: #f8fbfd; border-radius: 12px 12px 0 0; padding: 14px 20px; border-bottom-color: #eef2f7;">
+                    <div>
+                        <div style="font-weight: 700; color: #1a2e3b; font-size: 15px;">{{ visit.visit_date|date:"F j, Y" }}</div>
+                        <div style="font-size: 12px; color: #6f8295; margin-top: 2px;">
+                            {{ visit.visit_date|date:"H:i" }}
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 13px; color: #37485a; display: flex; align-items: center; gap: 5px;">
+                            <i data-feather="user" style="width: 13px; height: 13px; color: #0ca789;"></i>
+                            Dr. {{ visit.doctor.get_full_name|default:visit.doctor.username }}
+                        </span>
+                        <span class="pc-chip pc-chip--confirmed" style="padding: 4px 12px; font-size: 12px;">Completed</span>
+                    </div>
+                </div>
+
+                {# Notes + Diagnosis grid #}
+                <div class="pc-card-body" style="padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div style="font-size: 11px; font-weight: 600; color: #8e9aab; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">Clinical Notes</div>
+                        {% if visit.notes %}
+                        <div style="color: #37485a; font-size: 14px; line-height: 1.65; background: #f4f7f9; padding: 12px 14px; border-radius: 8px; white-space: pre-wrap; border-left: 3px solid #2c3e91;">{{ visit.notes }}</div>
+                        {% else %}
+                        <div style="color: #98a1b3; font-size: 13px; font-style: italic; padding: 10px;">No clinical notes recorded.</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; font-weight: 600; color: #8e9aab; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">Diagnosis</div>
+                        {% if visit.diagnosis %}
+                        <div style="color: #37485a; font-size: 14px; line-height: 1.65; background: #f4f7f9; padding: 12px 14px; border-radius: 8px; white-space: pre-wrap; border-left: 3px solid #0ca789;">{{ visit.diagnosis }}</div>
+                        {% else %}
+                        <div style="color: #98a1b3; font-size: 13px; font-style: italic; padding: 10px;">No diagnosis recorded.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Prescription & appointment footer #}
+                {% if visit.prescriptions.exists or visit.appointment %}
+                <div style="border-top: 1px solid #f0f4f8; padding: 10px 20px; background: #fafcfe; border-radius: 0 0 12px 12px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    {% if visit.prescriptions.exists %}
+                    <a href="{% url 'patient_my_prescriptions' %}"
+                       style="font-size: 13px; color: #0ca789; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                        <i data-feather="file-text" style="width: 13px; height: 13px;"></i>
+                        {{ visit.prescriptions.count }} prescription{{ visit.prescriptions.count|pluralize }} issued →
+                    </a>
+                    {% endif %}
+                    {% if visit.appointment %}
+                    <span style="font-size: 12px; color: #98a1b3; display: flex; align-items: center; gap: 5px;">
+                        <i data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                        Appt: {{ visit.appointment.scheduled_time|date:"M d, Y H:i" }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+        <div style="position: relative; padding-left: 0; margin-top: 8px;">
+            <div style="position: absolute; left: -28px; top: 0; width: 18px; height: 18px; border-radius: 50%;
+                        background: #ecf1f7; border: 2px solid #dbe3ed; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #b0bac7;"></div>
+            </div>
+            <div style="padding-left: 4px; padding-top: 2px; font-size: 13px; color: #98a1b3; font-style: italic;">
+                Beginning of your records
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

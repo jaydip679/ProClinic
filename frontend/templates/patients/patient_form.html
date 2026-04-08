@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-5);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0; margin-bottom: 8px;">{{ title }}</h2>
+            <p style="color: #6f8295; font-size: 14px; margin: 0;">Fill in the patient's demographic and medical profile details.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            {% if patient %}
+                <a href="{% url 'patient_detail' patient.pk %}" class="pc-btn pc-btn--ghost">Cancel</a>
+            {% else %}
+                <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost">Cancel</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="pc-card" style="max-width: 900px;">
+        <div class="pc-card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <h4 style="font-size: 15px; font-weight: 600; color: #24323b; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #e4eaf2; padding-bottom: 8px;">Personal Information</h4>
+                
+                <div class="pc-grid" style="margin-bottom: 20px;">
+                    <div class="pc-col-6">
+                        <label for="{{ form.first_name.id_for_label }}" class="pc-label">First Name <span style="color: #e23e57;">*</span></label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.first_name.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.last_name.id_for_label }}" class="pc-label">Last Name <span style="color: #e23e57;">*</span></label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.last_name.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="pc-grid" style="margin-bottom: 24px;">
+                    <div class="pc-col-4">
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="pc-label">Date of Birth <span style="color: #e23e57;">*</span></label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.date_of_birth.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-4">
+                        <label for="{{ form.gender.id_for_label }}" class="pc-label">Gender <span style="color: #e23e57;">*</span></label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.gender.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-4">
+                        <label for="{{ form.blood_group.id_for_label }}" class="pc-label">Blood Group <span style="color: #e23e57;">*</span></label>
+                        {{ form.blood_group }}
+                        {% if form.blood_group.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.blood_group.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <h4 style="font-size: 15px; font-weight: 600; color: #24323b; margin-top: 32px; margin-bottom: 20px; border-bottom: 1px solid #e4eaf2; padding-bottom: 8px;">Contact Details</h4>
+
+                <div class="pc-grid" style="margin-bottom: 20px;">
+                    <div class="pc-col-6">
+                        <label for="{{ form.contact_number.id_for_label }}" class="pc-label">Contact Number <span style="color: #e23e57;">*</span></label>
+                        {{ form.contact_number }}
+                        {% if form.contact_number.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.contact_number.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.email.id_for_label }}" class="pc-label">Email Address</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.email.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label for="{{ form.address.id_for_label }}" class="pc-label">Physical Address <span style="color: #e23e57;">*</span></label>
+                    {{ form.address }}
+                    {% if form.address.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.address.errors|join:", " }}</div>{% endif %}
+                </div>
+
+                <h4 style="font-size: 15px; font-weight: 600; color: #24323b; margin-top: 32px; margin-bottom: 20px; border-bottom: 1px solid #e4eaf2; padding-bottom: 8px;">Medical Flags</h4>
+
+                <div style="margin-bottom: 32px;">
+                    <label for="{{ form.allergies.id_for_label }}" class="pc-label">Known Allergies</label>
+                    {{ form.allergies }}
+                    {% if form.allergies.errors %}<div style="color: #e23e57; font-size: 12px; margin-top: 4px;">{{ form.allergies.errors|join:", " }}</div>{% endif %}
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 24px; border-top: 1px solid #e4eaf2;">
+                    {% if patient %}
+                    <a href="{% url 'patient_detail' patient.pk %}" class="pc-btn pc-btn--ghost">Cancel</a>
+                    {% else %}
+                    <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost">Cancel</a>
+                    {% endif %}
+                    <button type="submit" class="pc-btn pc-btn--primary">
+                        <i data-feather="save" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                        Save Patient
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

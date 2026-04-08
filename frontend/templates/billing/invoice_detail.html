@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ invoice.pk }} — {{ invoice.patient }} — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Back nav #}
+    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'invoice_list' %}" class="pc-btn pc-btn--ghost"
+           style="padding: 6px; min-height: 34px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <i data-feather="arrow-left" style="width: 16px; height: 16px;"></i> All Invoices
+        </a>
+        <span style="color: #98a1b3; font-size: 13px;">Invoice #{{ invoice.pk }}</span>
+    </div>
+
+    {# Title row #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--pc-space-6); flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Invoice #{{ invoice.pk }}</h2>
+            <p class="pc-muted" style="margin-top: 4px;">
+                Generated {{ invoice.created_at|date:"M d, Y" }} at {{ invoice.created_at|date:"H:i" }}
+                {% if invoice.updated_at != invoice.created_at %}
+                &nbsp;&middot;&nbsp; Last updated {{ invoice.updated_at|date:"M d, Y H:i" }}
+                {% endif %}
+            </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            {# Current status badge #}
+            {% if invoice.status == 'DRAFT' %}
+                <span class="pc-chip" style="padding: 9px 20px; font-size: 14px; font-weight: 700; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4;">Draft</span>
+            {% elif invoice.status == 'PAID' %}
+                <span class="pc-chip pc-chip--confirmed" style="padding: 9px 20px; font-size: 14px; font-weight: 700;">✓ Paid</span>
+            {% elif invoice.status == 'PARTIAL' %}
+                <span class="pc-chip" style="padding: 9px 20px; font-size: 14px; font-weight: 700; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;">Partially Paid</span>
+            {% elif invoice.status == 'REFUNDED' %}
+                <span class="pc-chip" style="padding: 9px 20px; font-size: 14px; font-weight: 700; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4;">Refunded / Cancelled</span>
+            {% else %}
+                <span class="pc-chip pc-chip--danger" style="padding: 9px 20px; font-size: 14px; font-weight: 700;">Unpaid</span>
+            {% endif %}
+
+            {# Quick action buttons #}
+            {% if invoice.status == 'DRAFT' %}
+            <a href="{% url 'invoice_edit_draft' invoice.pk %}"
+               class="pc-btn pc-btn--primary"
+               style="border-radius: 9px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #2c3e91, #1e2f7f); box-shadow: 0 4px 14px rgba(44,62,145,0.3);">
+                <i data-feather="edit-3" style="width: 16px; height: 16px;"></i> Edit &amp; Publish Draft
+            </a>
+            {% else %}
+            {% if invoice.status != 'PAID' %}
+            <button class="pc-btn pc-btn--primary"
+                    style="border-radius: 9px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0ca789, #1fa574); box-shadow: 0 4px 14px rgba(12,167,137,0.3);"
+                    onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PAID', '{{ invoice.status }}')">
+                <i data-feather="check-circle" style="width: 16px; height: 16px;"></i> Mark as Paid
+            </button>
+            {% endif %}
+
+            {% if invoice.status == 'UNPAID' %}
+            <button class="pc-btn pc-btn--ghost"
+                    style="border-radius: 9px; color: #b7780a; border-color: #f0d990;"
+                    onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PARTIAL', '{{ invoice.status }}')">
+                Mark Partial
+            </button>
+            {% endif %}
+
+            {% if invoice.status == 'PAID' %}
+            <button class="pc-btn pc-btn--ghost"
+                    style="border-radius: 9px; color: #596578;"
+                    onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'UNPAID', '{{ invoice.status }}')">
+                Revert to Unpaid
+            </button>
+            {% endif %}
+            {% endif %}
+
+            <a href="{% url 'invoice_pdf_download' invoice.pk %}"
+               class="pc-btn pc-btn--ghost"
+               style="border-radius: 9px; display: flex; align-items: center; gap: 8px; color: #2c3e91; border-color: #c7d2fe;">
+                <i data-feather="download" style="width: 16px; height: 16px;"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="pc-grid" style="gap: var(--pc-space-6);">
+
+        {# Left column: Patient + Appointment info #}
+        <div class="pc-col-4" style="display: flex; flex-direction: column; gap: var(--pc-space-5);">
+
+            {# Patient card #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="background: linear-gradient(to right, #eef1fa, #fff); padding: 16px 20px; border-radius: 14px 14px 0 0;">
+                    <strong style="color: #2c3e91; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="user" style="width: 14px; height: 14px;"></i> Patient
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 20px; text-align: center;">
+                    <div class="pc-avatar" style="width: 60px; height: 60px; font-size: 22px; background: #2c3e91; color: #fff; margin: 0 auto 12px;">
+                        {{ invoice.patient.first_name|first }}{{ invoice.patient.last_name|first }}
+                    </div>
+                    <div style="font-weight: 700; font-size: 17px; color: #1a2e3b; margin-bottom: 4px;">{{ invoice.patient }}</div>
+                    {% if invoice.patient.blood_group %}
+                    <span class="pc-chip pc-chip--danger" style="padding: 3px 10px; font-size: 12px; margin-bottom: 12px; display: inline-block;">{{ invoice.patient.blood_group }}</span>
+                    {% endif %}
+                    <div style="text-align: left; border-top: 1px solid #f0f4f8; padding-top: 14px; font-size: 13px; display: grid; gap: 8px;">
+                        {% if invoice.patient.contact_number %}
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <i data-feather="phone" style="width: 13px; height: 13px; color: #6f8295; flex-shrink: 0;"></i>
+                            <span style="color: #37485a;">{{ invoice.patient.contact_number }}</span>
+                        </div>
+                        {% endif %}
+                        {% if invoice.patient.email %}
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <i data-feather="mail" style="width: 13px; height: 13px; color: #6f8295; flex-shrink: 0;"></i>
+                            <span style="color: #37485a; word-break: break-all;">{{ invoice.patient.email }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# Linked appointment card (if any) #}
+            {% if invoice.appointment %}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="padding: 14px 18px; background: #f8fbfd; border-radius: 14px 14px 0 0;">
+                    <strong style="font-size: 13px; color: #37485a; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="calendar" style="width: 14px; height: 14px; color: #0ca789;"></i> Linked Appointment
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 16px 18px; font-size: 13px; color: #596578; display: grid; gap: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <i data-feather="clock" style="width: 13px; height: 13px; color: #6f8295; margin-top: 1px; flex-shrink: 0;"></i>
+                        <span>{{ invoice.appointment.scheduled_time|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% if invoice.appointment.doctor %}
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <i data-feather="activity" style="width: 13px; height: 13px; color: #6f8295; margin-top: 1px; flex-shrink: 0;"></i>
+                        <span>Dr. {{ invoice.appointment.doctor.get_full_name|default:invoice.appointment.doctor.username }}</span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span style="font-size: 12px; background: #f0f4f8; border-radius: 6px; padding: 3px 8px; color: #596578;">{{ invoice.appointment.get_status_display }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Payment summary card #}
+            <div class="pc-card" style="border-radius: 14px; border-color:
+                {% if invoice.status == 'PAID' %}#b2e5d9{% elif invoice.status == 'PARTIAL' %}#f0d990{% else %}#f7d4d9{% endif %};
+                background:
+                {% if invoice.status == 'PAID' %}#f0faf7{% elif invoice.status == 'PARTIAL' %}#fffcf0{% else %}#fdf2f4{% endif %};">
+                <div class="pc-card-body" style="padding: 20px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #8e9aab; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;">Payment Summary</div>
+                    <div style="font-size: 32px; font-weight: 900; color: #1a2e3b; margin-bottom: 6px;">
+                        &#8377;{{ invoice.grand_total|floatformat:2 }}
+                    </div>
+                    <div style="font-size: 14px; text-align: left; padding-top: 6px;">
+                        <div><strong style="color: #37485a;">Paid:</strong> <span style="color: #0ca789;">&#8377;{{ invoice.paid_amount|floatformat:2 }}</span></div>
+                        <div><strong style="color: #37485a;">Due:</strong> <span style="color: #e23e57;">&#8377;{{ invoice.due_amount|floatformat:2 }}</span></div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 13px; color:
+                        {% if invoice.status == 'PAID' %}#0ca789{% elif invoice.status == 'PARTIAL' %}#b7780a{% else %}#e23e57{% endif %};
+                        font-weight: 600;">
+                        {% if invoice.status == 'PAID' %}Fully settled{% elif invoice.status == 'PARTIAL' %}Partially collected{% else %}Outstanding — collection pending{% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {# Right column: Line items table + status history #}
+        <div class="pc-col-8" style="display: flex; flex-direction: column; gap: var(--pc-space-5);">
+
+            {# Line items #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="padding: 18px 24px; background: linear-gradient(to right, #fff8e6, #fff); border-bottom-color: #f5eccf;">
+                    <strong style="color: #1a2e3b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i data-feather="list" style="width: 16px; height: 16px; color: #e6a817;"></i>
+                        Line Items
+                        <span style="background: #e6a817; color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 700;">
+                            {{ items.count }}
+                        </span>
+                    </strong>
+                </div>
+                <div class="pc-table-wrap">
+                    <table class="pc-table" style="min-width: 100%;">
+                        <thead style="background: #fdfaf2;">
+                            <tr>
+                                <th style="padding: 14px 24px; width: 50%;">Service / Description</th>
+                                <th style="padding: 14px 14px; text-align: right;">Unit Cost</th>
+                                <th style="padding: 14px 14px; text-align: center;">Qty</th>
+                                <th style="padding: 14px 24px; text-align: right;">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td style="padding: 16px 24px; color: #1a2e3b;">
+                                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #8e9aab;">{{ item.get_item_type_display }}</div>
+                                    <div style="font-weight: 600; font-size: 14px;">{{ item.service_name }}</div>
+                                    {% if item.notes %}
+                                    <div style="font-size: 12px; color: #6f8295; margin-top: 4px;">{{ item.notes }}</div>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 16px 14px; color: #596578; text-align: right;">&#8377;{{ item.unit_cost|floatformat:2 }}</td>
+                                <td style="padding: 16px 14px; text-align: center; color: #596578;">{{ item.quantity }}</td>
+                                <td style="padding: 16px 24px; font-weight: 700; color: #1a2e3b; text-align: right;">&#8377;{{ item.line_total|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px 20px; color: #8e9aab; font-size: 13px;">
+                                    No line items recorded for this invoice.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot style="background: #f7fafc; border-top: 2px solid #e4eaf2; font-size: 14px;">
+                            <tr style="border-bottom: 1px solid #ebf0f6;">
+                                <td colspan="3" style="padding: 12px 14px 4px 24px; font-weight: 600; color: #596578; text-align: right;">Subtotal</td>
+                                <td style="padding: 12px 24px 4px 24px; font-weight: 600; color: #37485a; text-align: right;">&#8377;{{ invoice.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% if invoice.discount_amount > 0 %}
+                            <tr style="border-bottom: 1px solid #ebf0f6;">
+                                <td colspan="3" style="padding: 4px 14px 4px 24px; font-weight: 600; color: #596578; text-align: right;">Discount</td>
+                                <td style="padding: 4px 24px 4px 24px; font-weight: 600; color: #0ca789; text-align: right;">-&#8377;{{ invoice.discount_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if invoice.tax_amount > 0 %}
+                            <tr style="border-bottom: 1px solid #ebf0f6;">
+                                <td colspan="3" style="padding: 4px 14px 12px 24px; font-weight: 600; color: #596578; text-align: right;">Tax</td>
+                                <td style="padding: 4px 24px 12px 24px; font-weight: 600; color: #e23e57; text-align: right;">+&#8377;{{ invoice.tax_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td colspan="3" style="padding: 16px 14px 16px 24px; font-weight: 700; color: #37485a; text-align: right; font-size: 15px;">
+                                    Grand Total
+                                </td>
+                                <td style="padding: 16px 24px; font-weight: 900; color: #1a2e3b; text-align: right; font-size: 18px;">
+                                    &#8377;{{ invoice.grand_total|floatformat:2 }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            {# Status change panel #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="padding: 16px 24px; background: #f8fbfd;">
+                    <strong style="font-size: 14px; color: #37485a; display: flex; align-items: center; gap: 7px;">
+                        <i data-feather="edit-2" style="width: 14px; height: 14px; color: #596578;"></i>
+                        Update Payment Status
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 20px 24px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+                    <span style="font-size: 13px; color: #596578;">Current status:</span>
+                    {% if invoice.status == 'DRAFT' %}
+                        <span class="pc-chip" style="padding: 5px 14px; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4;">Draft</span>
+                        <a href="{% url 'invoice_edit_draft' invoice.pk %}" class="pc-btn pc-btn--ghost"
+                           style="border-radius: 8px; color: #2c3e91; border-color: #c7d2fe; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                            <i data-feather="edit-3" style="width: 14px; height: 14px;"></i> Edit Draft
+                        </a>
+                    {% elif invoice.status == 'PAID' %}
+                        <span class="pc-chip pc-chip--confirmed" style="padding: 5px 14px;">✓ Paid</span>
+                    {% elif invoice.status == 'PARTIAL' %}
+                        <span class="pc-chip" style="padding: 5px 14px; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;">Partial</span>
+                    {% else %}
+                        <span class="pc-chip pc-chip--danger" style="padding: 5px 14px;">Unpaid</span>
+                    {% endif %}
+
+                    <span style="color: #dbe3ed;">|</span>
+
+                    {% if invoice.status != 'PAID' and invoice.status != 'REFUNDED' %}
+                    <button class="pc-btn pc-btn--ghost"
+                            style="border-radius: 8px; color: #0ca789; border-color: #b2e5d9; background: #f0faf7; display: flex; align-items: center; gap: 6px; font-size: 13px;"
+                            onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PAID', '{{ invoice.status }}')">
+                        <i data-feather="check-circle" style="width: 14px; height: 14px;"></i> Mark as Paid
+                    </button>
+                    {% endif %}
+
+                    {% if invoice.status == 'UNPAID' %}
+                    <button class="pc-btn pc-btn--ghost"
+                            style="border-radius: 8px; color: #b7780a; border-color: #f0d990; font-size: 13px;"
+                            onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PARTIAL', '{{ invoice.status }}')">
+                        Mark as Partial
+                    </button>
+                    {% endif %}
+
+                    {% if invoice.status == 'PARTIAL' %}
+                    <button class="pc-btn pc-btn--ghost"
+                            style="border-radius: 8px; color: #e23e57; border-color: #f7d4d9; font-size: 13px;"
+                            onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'UNPAID', '{{ invoice.status }}')">
+                        Revert to Unpaid
+                    </button>
+                    {% endif %}
+
+                    {% if invoice.status != 'REFUNDED' %}
+                    <button class="pc-btn pc-btn--ghost"
+                            style="border-radius: 8px; color: #596578; border-color: #d0d8e4; font-size: 13px;"
+                            onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'REFUNDED', '{{ invoice.status }}')">
+                        <i data-feather="x-circle" style="width: 13px; height: 13px;"></i> Mark Refunded
+                    </button>
+                    {% endif %}
+
+                    {% if invoice.status == 'PAID' %}
+                    <span style="font-size: 13px; color: #6f8295; font-style: italic;">
+                        <i data-feather="check" style="width: 13px; height: 13px; display: inline; color: #0ca789;"></i>
+                        This invoice is fully settled.
+                    </span>
+                    {% endif %}
+
+                    {% if invoice.status == 'REFUNDED' %}
+                    <span style="font-size: 13px; color: #596578; font-style: italic;">
+                        <i data-feather="x-circle" style="width: 13px; height: 13px; display: inline;"></i>
+                        This invoice has been refunded or cancelled.
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{# ── Status change modal ─────────────────────────────────────────────────────── #}
+<div id="statusModal"
+     style="display: none; position: fixed; inset: 0; background: rgba(20,30,48,0.45); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="pc-card" style="width: 440px; border-radius: 16px; padding: 0; box-shadow: 0 24px 64px rgba(0,0,0,0.22);">
+        <div id="statusModalHead" class="pc-card-head" style="padding: 18px 24px; border-radius: 16px 16px 0 0;">
+            <span id="statusModalTitle" style="color: #fff; font-weight: 700; font-size: 16px;"></span>
+            <button onclick="closeStatusModal()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;">
+                <i data-feather="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+        <div class="pc-card-body" style="padding: 24px;">
+            <p id="statusModalBody" style="color: #37485a; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;"></p>
+            <div class="pc-alert pc-alert--warning" style="font-size: 13px; margin-bottom: 20px; padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start;">
+                <i data-feather="alert-triangle" style="width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+                <span>This action will be recorded in the system audit trail.</span>
+            </div>
+            <form id="statusModalForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="statusModalValue" name="status" value="">
+                <input type="hidden" name="next" value="/billing/manage/{{ invoice.pk }}/">
+                
+                <div id="partialPaymentInput" style="display: none; margin-bottom: 20px;">
+                    <label for="paid_amount" class="pc-label" style="font-size: 13px; color: #37485a; margin-bottom: 6px; display: block;">Amount Paid (₹)</label>
+                    <input type="number" id="paid_amount" name="paid_amount" class="pc-input" step="0.01" min="0" max="{{ invoice.grand_total }}" style="width: 100%;" placeholder="e.g. 50.00">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeStatusModal()"
+                            class="pc-btn pc-btn--ghost" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" id="statusModalSubmit"
+                            class="pc-btn pc-btn--primary" style="border-radius: 8px;"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const STATUS_META = {
+    PAID:     { label: 'Confirm Payment Received', bg: 'linear-gradient(135deg,#0ca789,#1fa574)', btn: 'Confirm Paid' },
+    PARTIAL:  { label: 'Mark Partially Paid',       bg: 'linear-gradient(135deg,#e6a817,#d09410)', btn: 'Confirm Partial' },
+    UNPAID:   { label: 'Revert to Unpaid',          bg: 'linear-gradient(135deg,#c0392b,#e74c3c)', btn: 'Yes, Revert' },
+    REFUNDED: { label: 'Mark as Refunded / Cancelled', bg: 'linear-gradient(135deg,#596578,#37485a)', btn: 'Confirm Refund' },
+};
+
+function openStatusModal(pk, patient, newStatus, currentStatus) {
+    const meta    = STATUS_META[newStatus];
+    const modal   = document.getElementById('statusModal');
+    const head    = document.getElementById('statusModalHead');
+    const title   = document.getElementById('statusModalTitle');
+    const body    = document.getElementById('statusModalBody');
+    const form    = document.getElementById('statusModalForm');
+    const val     = document.getElementById('statusModalValue');
+    const submit  = document.getElementById('statusModalSubmit');
+
+    form.action   = `/billing/manage/${pk}/status/`;
+    val.value     = newStatus;
+    head.style.background = meta.bg;
+    title.textContent = meta.label;
+    body.innerHTML = `Updating <strong>Invoice #${pk}</strong> for <strong>${patient}</strong>.<br>
+                      Status change: <em>${currentStatus}</em> → <strong>${newStatus}</strong>`;
+    submit.textContent = meta.btn;
+    
+    const partialInputDiv = document.getElementById('partialPaymentInput');
+    const partialInput    = document.getElementById('paid_amount');
+    if (newStatus === 'PARTIAL') {
+        partialInputDiv.style.display = 'block';
+        partialInput.required = true;
+    } else {
+        partialInputDiv.style.display = 'none';
+        partialInput.required = false;
+    }
+    
+    modal.style.display = 'flex';
+    if (window.feather) feather.replace();
+}
+
+function closeStatusModal() {
+    document.getElementById('statusModal').style.display = 'none';
+}
+
+document.getElementById('statusModal').addEventListener('click', function(e) {
+    if (e.target === this) closeStatusModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatusModal(); });
+</script>
+{% endblock %}

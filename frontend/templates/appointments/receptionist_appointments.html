@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Management — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Page header #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Appointment Management</h2>
+            <p class="pc-muted" style="margin-top: 4px;">View, filter, cancel, reschedule, and track all clinic appointments</p>
+        </div>
+        {% if request.user.role != 'ADMIN' %}
+        <a href="{% url 'book_appointment' %}" class="pc-btn pc-btn--primary"
+           style="border-radius: 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(44,62,145,0.25);">
+            <i data-feather="plus" style="width: 16px; height: 16px;"></i> Book Appointment
+        </a>
+        {% endif %}
+    </div>
+
+    {# Status filter tabs #}
+    <div style="display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: var(--pc-space-4);">
+        <a href="?{% if date_filter %}date={{ date_filter }}&{% endif %}{% if search_query %}q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if not current_status %}background: #2c3e91; color: white; box-shadow: 0 3px 10px rgba(44,62,145,0.25);{% else %}background: #f0f4f8; color: #596578;{% endif %}">
+            All <span style="font-weight: 400; font-size: 12px;">({{ counts.all }})</span>
+        </a>
+        <a href="?status=SCHEDULED{% if date_filter %}&date={{ date_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'SCHEDULED' %}background: #2c3e91; color: white; box-shadow: 0 3px 10px rgba(44,62,145,0.25);{% else %}background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef0;{% endif %}">
+            Scheduled <span style="font-weight: 400; font-size: 12px;">({{ counts.SCHEDULED }})</span>
+        </a>
+        <a href="?status=RESCHEDULED{% if date_filter %}&date={{ date_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'RESCHEDULED' %}background: #5b8af5; color: white; box-shadow: 0 3px 10px rgba(91,138,245,0.3);{% else %}background: #f0f4fc; color: #5b8af5; border: 1px solid #c2d2f5;{% endif %}">
+            Rescheduled <span style="font-weight: 400; font-size: 12px;">({{ counts.RESCHEDULED }})</span>
+        </a>
+        <a href="?status=COMPLETED{% if date_filter %}&date={{ date_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'COMPLETED' %}background: #0ca789; color: white; box-shadow: 0 3px 10px rgba(12,167,137,0.3);{% else %}background: #f0faf7; color: #0ca789; border: 1px solid #b2e5d9;{% endif %}">
+            Completed <span style="font-weight: 400; font-size: 12px;">({{ counts.COMPLETED }})</span>
+        </a>
+        <a href="?status=CANCELLED{% if date_filter %}&date={{ date_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'CANCELLED' %}background: #e23e57; color: white; box-shadow: 0 3px 10px rgba(226,62,87,0.3);{% else %}background: #fdf2f4; color: #e23e57; border: 1px solid #f7d4d9;{% endif %}">
+            Cancelled <span style="font-weight: 400; font-size: 12px;">({{ counts.CANCELLED }})</span>
+        </a>
+        <a href="?status=NOSHOW{% if date_filter %}&date={{ date_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'NOSHOW' %}background: #7b5ea7; color: white; box-shadow: 0 3px 10px rgba(123,94,167,0.3);{% else %}background: #f5f0fc; color: #7b5ea7; border: 1px solid #d9cdf0;{% endif %}">
+            No Show <span style="font-weight: 400; font-size: 12px;">({{ counts.NOSHOW }})</span>
+        </a>
+    </div>
+
+    {# Search + Date filter row #}
+    <form method="get" style="margin-bottom: var(--pc-space-5);">
+        {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <div style="position: relative; flex: 1; min-width: 240px;">
+                <i data-feather="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #98a1b3; pointer-events: none;"></i>
+                <input type="text" name="q" value="{{ search_query }}" class="pc-input"
+                       placeholder="Search patient or doctor name…"
+                       style="padding-left: 36px; border-radius: 10px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 13px; color: #6f8295; white-space: nowrap;">Date:</label>
+                <input type="date" name="date" value="{{ date_filter }}" class="pc-input"
+                       style="border-radius: 10px; width: 170px;">
+            </div>
+            <button type="submit" class="pc-btn pc-btn--ghost" style="border-radius: 10px; padding: 0 20px;">Filter</button>
+            {# Quick: Today #}
+            <a href="?{% if current_status %}status={{ current_status }}&{% endif %}date={% now 'Y-m-d' %}"
+               class="pc-btn pc-btn--ghost"
+               style="border-radius: 10px; padding: 0 16px; font-size: 13px; {% if date_filter == today_str %}background: #eef1fa; color: #2c3e91; border-color: #c5cef0;{% endif %}">
+                Today
+            </a>
+            {% if search_query or date_filter %}
+            <a href="?{% if current_status %}status={{ current_status }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 10px; color: #e23e57; border-color: #f7d4d9; padding: 0 12px;">
+                <i data-feather="x" style="width: 14px; height: 14px;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {# Appointment Table #}
+    <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft); overflow: hidden;">
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
+                <thead style="background: #f7fafc;">
+                    <tr>
+                        <th style="padding: 16px 24px;">Date & Time</th>
+                        <th style="padding: 16px 14px;">Patient</th>
+                        <th style="padding: 16px 14px;">Doctor</th>
+                        <th style="padding: 16px 14px;">Reason</th>
+                        <th style="padding: 16px 14px;">Status</th>
+                        <th style="padding: 16px 24px; text-align: right; min-width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                    <tr style="transition: background 0.12s;"
+                        onmouseenter="this.style.background='#fafcfe'"
+                        onmouseleave="this.style.background='transparent'" id="row-{{ appt.pk }}">
+
+                        <td style="padding: 16px 24px;">
+                            <div style="font-weight: 600; color: #1a2e3b;">{{ appt.scheduled_time|date:"M d, Y" }}</div>
+                            <div style="font-size: 12px; color: #6f8295; margin-top: 2px;">{{ appt.scheduled_time|date:"H:i" }}</div>
+                        </td>
+
+                        <td style="padding: 16px 14px;">
+                            <div style="font-weight: 600; color: #1a2e3b;">{{ appt.patient.first_name }} {{ appt.patient.last_name }}</div>
+                            {% if appt.patient.contact_number %}
+                            <div style="font-size: 11px; color: #98a1b3; margin-top: 2px;">{{ appt.patient.contact_number }}</div>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 16px 14px; color: #596578; font-size: 14px;">
+                            {{ appt.doctor.get_full_name|default:appt.doctor.username }}
+                        </td>
+
+                        <td style="padding: 16px 14px; color: #596578; font-size: 13px; max-width: 160px;">
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ appt.reason }}">
+                                {{ appt.reason|default:"—" }}
+                            </div>
+                        </td>
+
+                        <td style="padding: 16px 14px;">
+                            {% if appt.status == 'SCHEDULED' %}
+                                <span class="pc-chip" style="padding: 5px 12px; background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef0; font-weight: 600;">Scheduled</span>
+                            {% elif appt.status == 'RESCHEDULED' %}
+                                <span class="pc-chip" style="padding: 5px 12px; background: #f0f4fc; color: #5b8af5; border: 1px solid #c2d2f5; font-weight: 600;">Rescheduled</span>
+                            {% elif appt.status == 'COMPLETED' %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 5px 12px; font-weight: 600;">Completed</span>
+                            {% elif appt.status == 'CANCELLED' %}
+                                <span class="pc-chip pc-chip--danger" style="padding: 5px 12px; font-weight: 600;">Cancelled</span>
+                            {% elif appt.status == 'NOSHOW' %}
+                                <span class="pc-chip" style="padding: 5px 12px; background: #f5f0fc; color: #7b5ea7; border: 1px solid #d9cdf0; font-weight: 600;">No Show</span>
+                            {% else %}
+                                <span class="pc-chip" style="padding: 5px 12px;">{{ appt.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 12px 20px; text-align: right;">
+                            <div style="display: flex; gap: 5px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+
+                                {# Reschedule: SCHEDULED and RESCHEDULED #}
+                                {% if appt.status == 'SCHEDULED' or appt.status == 'RESCHEDULED' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 10px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #2c3e91; border-color: #c5cef0; background: #eef1fa; display: flex; align-items: center; gap: 4px;"
+                                        onclick="openReschedule({{ appt.pk }}, '{{ appt.patient|escapejs }}', '{{ appt.scheduled_time|date:'Y-m-d\TH:i' }}')">
+                                    <i data-feather="clock" style="width: 12px; height: 12px;"></i> Reschedule
+                                </button>
+                                {% endif %}
+
+                                {# Check In: SCHEDULED and RESCHEDULED #}
+                                {% if appt.status == 'SCHEDULED' or appt.status == 'RESCHEDULED' %}
+                                <form method="post" action="{% url 'receptionist_checkin_appointment' appt.pk %}" style="display:inline-flex; align-items:center; gap: 6px;">
+                                    {% csrf_token %}
+                                    <input type="text" name="room_assignment" placeholder="Room (opt)" class="pc-input" style="width: 80px; padding: 4px 8px; min-height: 30px; font-size: 12px; border-radius: 7px;">
+                                    <button type="submit" class="pc-btn pc-btn--primary"
+                                            style="padding: 5px 10px; min-height: 30px; font-size: 12px; border-radius: 7px; display: flex; align-items: center; gap: 4px;">
+                                        <i data-feather="check-square" style="width: 12px; height: 12px;"></i> Check In
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {# Mark No-Show: SCHEDULED only #}
+                                {% if appt.status == 'SCHEDULED' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 10px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #7b5ea7; border-color: #d9cdf0; background: #f5f0fc; display: flex; align-items: center; gap: 4px;"
+                                        onclick="openNoShow({{ appt.pk }}, '{{ appt.patient|escapejs }}')">
+                                    <i data-feather="user-x" style="width: 12px; height: 12px;"></i> No Show
+                                </button>
+                                {% endif %}
+
+                                {# Cancel: SCHEDULED and RESCHEDULED #}
+                                {% if appt.status == 'SCHEDULED' or appt.status == 'RESCHEDULED' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 10px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #e23e57; border-color: #f7d4d9; background: #fdf2f4; display: flex; align-items: center; gap: 4px;"
+                                        onclick="openCancel({{ appt.pk }}, '{{ appt.patient|escapejs }}')">
+                                    <i data-feather="x-circle" style="width: 12px; height: 12px;"></i> Cancel
+                                </button>
+                                {% endif %}
+
+                                {# Cancelled: show reason tooltip if present #}
+                                {% if appt.status == 'CANCELLED' and appt.cancellation_reason %}
+                                <span style="font-size: 11px; color: #98a1b3; font-style: italic; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                      title="{{ appt.cancellation_reason }}">
+                                    "{{ appt.cancellation_reason|truncatechars:30 }}"
+                                </span>
+                                {% endif %}
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 90px 20px; color: #8e9aab;">
+                            <i data-feather="calendar" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+                            <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">No appointments found</div>
+                            <div style="font-size: 14px; margin-bottom: 20px;">
+                                {% if search_query %}No results for "{{ search_query }}"{% if date_filter %} on {{ date_filter }}{% endif %}.
+                                {% elif date_filter %}No appointments on {{ date_filter }}.
+                                {% elif current_status %}No {{ current_status|lower }} appointments.
+                                {% else %}No appointments have been booked yet.{% endif %}
+                            </div>
+                            {% if search_query or date_filter or current_status %}
+                            <a href="{% url 'receptionist_appointments' %}" class="pc-btn pc-btn--ghost" style="border-radius: 9px; display: inline-flex;">Clear all filters</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ── Reschedule Modal ─────────────────────────────────────────────────────── #}
+<div id="rescheduleModal"
+     style="display: none; position: fixed; inset: 0; background: rgba(20,30,48,0.45); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="pc-card" style="width: 460px; border-radius: 16px; box-shadow: 0 24px 64px rgba(0,0,0,0.22);">
+        <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f); border-radius: 16px 16px 0 0; padding: 18px 24px;">
+            <span style="color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <i data-feather="clock" style="width: 16px; height: 16px;"></i>
+                Reschedule Appointment
+            </span>
+            <button onclick="closeReschedule()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;">
+                <i data-feather="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+        <div class="pc-card-body" style="padding: 24px;">
+            <p id="rescheduleInfo" style="color: #596578; margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;"></p>
+            <form id="rescheduleForm" method="post">
+                {% csrf_token %}
+                <div class="pc-form-row" style="margin-bottom: 16px;">
+                    <label class="pc-label" for="new_time">
+                        New Date & Time <span style="color: #e23e57;">*</span>
+                    </label>
+                    <input type="datetime-local" id="new_time" name="new_time" class="pc-input" required
+                           style="border-radius: 8px;">
+                    <div style="font-size: 12px; color: #8e9aab; margin-top: 6px;">Must be a future time. Staff bookings can override slot conflicts.</div>
+                </div>
+                <div class="pc-alert pc-alert--info" style="font-size: 13px; margin-bottom: 20px; padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start; background: #eef1fa; border: 1px solid #c5cef0; color: #2c3e91;">
+                    <i data-feather="info" style="width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+                    The appointment status will be updated to <strong>Rescheduled</strong> and this action will be recorded in the audit log.
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeReschedule()" class="pc-btn pc-btn--ghost" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="pc-btn pc-btn--primary"
+                            style="border-radius: 8px; background: linear-gradient(135deg, #2c3e91, #1e2f7f); display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="check" style="width: 14px; height: 14px;"></i> Confirm Reschedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Cancel Modal ─────────────────────────────────────────────────────────── #}
+<div id="cancelModal"
+     style="display: none; position: fixed; inset: 0; background: rgba(20,30,48,0.45); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="pc-card" style="width: 440px; border-radius: 16px; box-shadow: 0 24px 64px rgba(0,0,0,0.22);">
+        <div class="pc-card-head" style="background: linear-gradient(135deg, #c0392b, #e74c3c); border-radius: 16px 16px 0 0; padding: 18px 24px;">
+            <span style="color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <i data-feather="x-circle" style="width: 16px; height: 16px;"></i>
+                Cancel Appointment
+            </span>
+            <button onclick="closeCancel()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;">
+                <i data-feather="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+        <div class="pc-card-body" style="padding: 24px;">
+            <p id="cancelInfo" style="color: #596578; margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;"></p>
+            <form id="cancelForm" method="post">
+                {% csrf_token %}
+                <div class="pc-form-row" style="margin-bottom: 16px;">
+                    <label class="pc-label" for="cancel_reason">Cancellation Reason <span style="color: #8e9aab; font-weight: 400;">(optional)</span></label>
+                    <textarea id="cancel_reason" name="reason" class="pc-textarea" rows="3"
+                              placeholder="e.g., Patient requested, Doctor emergency, Weather…"
+                              style="border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+                <div class="pc-alert pc-alert--warning" style="font-size: 13px; margin-bottom: 20px; padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start;">
+                    <i data-feather="alert-triangle" style="width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+                    This cannot be undone. The cancellation reason will be saved and the audit log will be updated.
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeCancel()" class="pc-btn pc-btn--ghost" style="border-radius: 8px;">Keep Appointment</button>
+                    <button type="submit" class="pc-btn"
+                            style="border-radius: 8px; background: #e23e57; color: white; border-color: #e23e57; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="trash-2" style="width: 14px; height: 14px;"></i> Yes, Cancel It
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── No Show Modal ────────────────────────────────────────────────────────── #}
+<div id="noshowModal"
+     style="display: none; position: fixed; inset: 0; background: rgba(20,30,48,0.45); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="pc-card" style="width: 420px; border-radius: 16px; box-shadow: 0 24px 64px rgba(0,0,0,0.22);">
+        <div class="pc-card-head" style="background: linear-gradient(135deg, #7b5ea7, #5f3d8a); border-radius: 16px 16px 0 0; padding: 18px 24px;">
+            <span style="color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <i data-feather="user-x" style="width: 16px; height: 16px;"></i>
+                Mark as No Show
+            </span>
+            <button onclick="closeNoShow()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;">
+                <i data-feather="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+        <div class="pc-card-body" style="padding: 24px;">
+            <p id="noshowInfo" style="color: #596578; margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;"></p>
+            <div class="pc-alert pc-alert--warning" style="font-size: 13px; margin-bottom: 20px; padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start;">
+                <i data-feather="alert-triangle" style="width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+                The appointment will be flagged as <strong>No Show</strong> and recorded in the audit log.
+            </div>
+            <form id="noshowForm" method="post">
+                {% csrf_token %}
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeNoShow()" class="pc-btn pc-btn--ghost" style="border-radius: 8px;">Go Back</button>
+                    <button type="submit" class="pc-btn"
+                            style="border-radius: 8px; background: #7b5ea7; color: white; border-color: #7b5ea7; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="user-x" style="width: 14px; height: 14px;"></i> Confirm No Show
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Reschedule ────────────────────────────────
+function openReschedule(pk, patient, currentTime) {
+    const modal = document.getElementById('rescheduleModal');
+    const form  = document.getElementById('rescheduleForm');
+    const info  = document.getElementById('rescheduleInfo');
+    form.action = `/appointments/manage/${pk}/reschedule/`;
+    info.innerHTML = `Rescheduling appointment for <strong>${patient}</strong>. Current time: <em>${currentTime.replace('T', ' ')}</em>.`;
+    const input = document.getElementById('new_time');
+    input.min   = new Date(Date.now() + 60000).toISOString().slice(0, 16);
+    input.value = currentTime || '';
+    modal.style.display = 'flex';
+    if (window.feather) feather.replace();
+}
+function closeReschedule() { document.getElementById('rescheduleModal').style.display = 'none'; }
+
+// ── Cancel ────────────────────────────────────
+function openCancel(pk, patient) {
+    const modal = document.getElementById('cancelModal');
+    const form  = document.getElementById('cancelForm');
+    const info  = document.getElementById('cancelInfo');
+    form.action = `/appointments/manage/${pk}/cancel/`;
+    info.innerHTML = `You are about to cancel the appointment for <strong>${patient}</strong>. This action cannot be reversed.`;
+    document.getElementById('cancel_reason').value = '';
+    modal.style.display = 'flex';
+    if (window.feather) feather.replace();
+}
+function closeCancel() { document.getElementById('cancelModal').style.display = 'none'; }
+
+// ── No Show ───────────────────────────────────
+function openNoShow(pk, patient) {
+    const modal = document.getElementById('noshowModal');
+    const form  = document.getElementById('noshowForm');
+    const info  = document.getElementById('noshowInfo');
+    form.action = `/appointments/manage/${pk}/noshow/`;
+    info.innerHTML = `The patient <strong>${patient}</strong> did not attend their scheduled appointment.`;
+    modal.style.display = 'flex';
+    if (window.feather) feather.replace();
+}
+function closeNoShow() { document.getElementById('noshowModal').style.display = 'none'; }
+
+// ── Global close behaviours ───────────────────
+['rescheduleModal','cancelModal','noshowModal'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeReschedule();
+        closeCancel();
+        closeNoShow();
+    }
+});
+</script>
+{% endblock %}

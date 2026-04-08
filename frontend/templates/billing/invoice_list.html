@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice Management — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Page header #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Invoice Management</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Track billing, update payment status, and manage all patient invoices</p>
+        </div>
+        <a href="{% url 'generate_invoice' %}" class="pc-btn pc-btn--primary"
+           style="border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <i data-feather="plus" style="width: 16px; height: 16px;"></i> Generate Invoice
+        </a>
+    </div>
+
+    {# Revenue summary bar #}
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: var(--pc-space-5);">
+        <div class="pc-card" style="border-radius: 12px; background: linear-gradient(160deg, #0ca789, #1fa574); color: white; border: none; box-shadow: 0 8px 24px rgba(12,167,137,0.2); padding: 4px;">
+            <div class="pc-card-body" style="padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 600; opacity: 0.85; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Collected</div>
+                <div style="font-size: 26px; font-weight: 800;">&#8377;{{ revenue.paid|floatformat:0 }}</div>
+                <div style="font-size: 12px; opacity: 0.75; margin-top: 4px;">{{ counts.PAID }} invoice{{ counts.PAID|pluralize }} paid</div>
+            </div>
+        </div>
+        <div class="pc-card" style="border-radius: 12px; background: linear-gradient(160deg, #e6a817, #d49510); color: white; border: none; box-shadow: 0 8px 24px rgba(230,168,23,0.25); padding: 4px;">
+            <div class="pc-card-body" style="padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 600; opacity: 0.85; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Outstanding</div>
+                <div style="font-size: 26px; font-weight: 800;">&#8377;{{ revenue.pending|floatformat:0 }}</div>
+                <div style="font-size: 12px; opacity: 0.75; margin-top: 4px;">{{ counts.UNPAID }} unpaid + {{ counts.PARTIAL }} partial</div>
+            </div>
+        </div>
+        <div class="pc-card" style="border-radius: 12px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft); padding: 4px;">
+            <div class="pc-card-body" style="padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 600; color: #8e9aab; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Total Invoices</div>
+                <div style="font-size: 26px; font-weight: 800; color: #1a2e3b;">{{ counts.all }}</div>
+                <div style="font-size: 12px; color: #98a1b3; margin-top: 4px;">all time</div>
+            </div>
+        </div>
+        <div class="pc-card" style="border-radius: 12px; border-color: #f7d4d9; background: #fdf2f4; box-shadow: none; padding: 4px;">
+            <div class="pc-card-body" style="padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 600; color: #e23e57; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Unpaid Only</div>
+                <div style="font-size: 26px; font-weight: 800; color: #e23e57;">{{ counts.UNPAID }}</div>
+                <a href="?status=UNPAID" style="font-size: 12px; color: #e23e57; margin-top: 4px; display: inline-block; text-decoration: underline; opacity: 0.8;">View unpaid →</a>
+            </div>
+        </div>
+    </div>
+
+    {# Status filter tabs #}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--pc-space-4);">
+        <a href="?{% if search_query %}q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if not current_status %}background: #2c3e91; color: white; box-shadow: 0 3px 10px rgba(44,62,145,0.25);{% else %}background: #f0f4f8; color: #596578;{% endif %}">
+            All <span style="font-weight: 400; font-size: 12px;">({{ counts.all }})</span>
+        </a>
+        <a href="?status=UNPAID{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'UNPAID' %}background: #e23e57; color: white; box-shadow: 0 3px 10px rgba(226,62,87,0.3);{% else %}background: #fdf2f4; color: #e23e57; border: 1px solid #f7d4d9;{% endif %}">
+            Unpaid <span style="font-weight: 400; font-size: 12px;">({{ counts.UNPAID }})</span>
+        </a>
+        <a href="?status=PARTIAL{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'PARTIAL' %}background: #e6a817; color: white; box-shadow: 0 3px 10px rgba(230,168,23,0.3);{% else %}background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;{% endif %}">
+            Partial <span style="font-weight: 400; font-size: 12px;">({{ counts.PARTIAL }})</span>
+        </a>
+        <a href="?status=PAID{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;
+                  {% if current_status == 'PAID' %}background: #0ca789; color: white; box-shadow: 0 3px 10px rgba(12,167,137,0.3);{% else %}background: #f0faf7; color: #0ca789; border: 1px solid #b2e5d9;{% endif %}">
+            Paid <span style="font-weight: 400; font-size: 12px;">({{ counts.PAID }})</span>
+        </a>
+        {% if counts.DRAFT %}
+        <a href="?status=DRAFT{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 7px;
+                  {% if current_status == 'DRAFT' %}background: #37485a; color: white; box-shadow: 0 3px 10px rgba(55,72,90,0.3);{% else %}background: #f0f4f8; color: #37485a; border: 1px solid #d0d8e4;{% endif %}">
+            <i data-feather="clock" style="width: 13px; height: 13px;"></i>
+            Drafts
+            <span style="font-weight: 700; font-size: 11px;
+                         {% if current_status == 'DRAFT' %}background: rgba(255,255,255,0.25); color: white;{% else %}background: #e6a817; color: white;{% endif %}
+                         border-radius: 10px; padding: 1px 7px; animation: {% if current_status != 'DRAFT' %}pulse 1.8s ease-in-out infinite{% else %}none{% endif %};">{{ counts.DRAFT }}</span>
+        </a>
+        {% endif %}
+    </div>
+
+    {# Search bar #}
+    <form method="get" style="margin-bottom: var(--pc-space-5);">
+        {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+        <div style="display: flex; gap: 10px; max-width: 460px;">
+            <div style="position: relative; flex: 1;">
+                <i data-feather="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #98a1b3; pointer-events: none;"></i>
+                <input type="text" name="q" value="{{ search_query }}" class="pc-input"
+                       placeholder="Search by patient name…"
+                       style="padding-left: 38px; border-radius: 10px;">
+            </div>
+            <button type="submit" class="pc-btn pc-btn--ghost" style="border-radius: 10px; padding: 0 20px;">Search</button>
+            {% if search_query %}
+            <a href="?{% if current_status %}status={{ current_status }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 10px; color: #e23e57; border-color: #f7d4d9; padding: 0 14px;">
+                <i data-feather="x" style="width: 14px; height: 14px;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {# Invoice table #}
+    <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft); overflow: hidden;">
+        <div class="pc-table-wrap">
+            <table class="pc-table" style="min-width: 100%;">
+                <thead style="background: #f7fafc;">
+                    <tr>
+                        <th style="padding: 16px 24px;">Invoice</th>
+                        <th style="padding: 16px 14px;">Patient</th>
+                        <th style="padding: 16px 14px;">Services</th>
+                        <th style="padding: 16px 14px;">Total</th>
+                        <th style="padding: 16px 14px;">Status</th>
+                        <th style="padding: 16px 14px;">Date</th>
+                        <th style="padding: 16px 24px; text-align: right; min-width: 240px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr style="transition: background 0.15s;" onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background='transparent'">
+                        <td style="padding: 18px 24px;">
+                            <a href="{% url 'invoice_detail' invoice.pk %}"
+                               style="font-weight: 700; color: #2c3e91; text-decoration: none; font-size: 15px;">#{{ invoice.id }}</a>
+                        </td>
+                        <td style="padding: 18px 14px;">
+                            <div style="font-weight: 600; color: #1a2e3b;">{{ invoice.patient }}</div>
+                            {% if invoice.appointment %}
+                            <div style="font-size: 11px; color: #98a1b3; margin-top: 2px;">
+                                Appt: {{ invoice.appointment.scheduled_time|date:"M d, Y" }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 18px 14px; max-width: 180px;">
+                            <ul style="margin: 0; padding-left: 14px; color: #596578; font-size: 12px; list-style: disc;">
+                                {% for item in invoice.items.all %}
+                                <li>{{ item.service_name }} &times;{{ item.quantity }}</li>
+                                {% empty %}
+                                <li style="list-style: none; padding-left: 0; color: #98a1b3;">—</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td style="padding: 18px 14px; font-weight: 800; color: #1a322c; font-size: 16px; white-space: nowrap;">
+                            &#8377;{{ invoice.total_amount|floatformat:0 }}
+                        </td>
+                        <td style="padding: 18px 14px;">
+                            {% if invoice.status == 'PAID' %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 6px 14px; font-weight: 600;">✓ Paid</span>
+                            {% elif invoice.status == 'PARTIAL' %}
+                                <span class="pc-chip" style="padding: 6px 14px; font-weight: 600; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;">Partial</span>
+                            {% elif invoice.status == 'DRAFT' %}
+                                <span class="pc-chip" style="padding: 6px 14px; font-weight: 600; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4;">Draft</span>
+                            {% elif invoice.status == 'REFUNDED' %}
+                                <span class="pc-chip" style="padding: 6px 14px; font-weight: 600; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4;">Refunded</span>
+                            {% else %}
+                                <span class="pc-chip pc-chip--danger" style="padding: 6px 14px; font-weight: 600;">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 18px 14px; color: #98a1b3; font-size: 13px; white-space: nowrap;">
+                            {{ invoice.created_at|date:"M d, Y" }}
+                        </td>
+                        <td style="padding: 14px 20px; text-align: right;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+
+                                <a href="{% url 'invoice_detail' invoice.pk %}"
+                                   class="pc-btn pc-btn--ghost"
+                                   style="padding: 5px 11px; min-height: 30px; font-size: 12px; border-radius: 7px; display: flex; align-items: center; gap: 4px;">
+                                    <i data-feather="eye" style="width: 12px; height: 12px;"></i> View
+                                </a>
+
+                                {% if invoice.status != 'PAID' and invoice.status != 'REFUNDED' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #0ca789; border-color: #b2e5d9; background: #f0faf7; display: flex; align-items: center; gap: 4px; cursor: pointer;"
+                                        onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PAID', '{{ invoice.status }}')">
+                                    <i data-feather="check-circle" style="width: 12px; height: 12px;"></i> Mark Paid
+                                </button>
+                                {% endif %}
+
+                                {% if invoice.status == 'UNPAID' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #b7780a; border-color: #f0d990; background: #fff8e6; cursor: pointer;"
+                                        onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'PARTIAL', '{{ invoice.status }}')">
+                                    Partial
+                                </button>
+                                {% endif %}
+
+                                {% if invoice.status == 'PAID' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #596578; cursor: pointer;"
+                                        onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'UNPAID', '{{ invoice.status }}')">
+                                    Revert
+                                </button>
+                                {% endif %}
+
+                                {% if invoice.status != 'REFUNDED' %}
+                                <button class="pc-btn pc-btn--ghost"
+                                        style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; color: #596578; border-color: #d0d8e4; cursor: pointer;"
+                                        onclick="openStatusModal({{ invoice.pk }}, '{{ invoice.patient|escapejs }}', 'REFUNDED', '{{ invoice.status }}')">
+                                    Refund
+                                </button>
+                                {% endif %}
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 90px 20px; color: #8e9aab;">
+                            <i data-feather="file-minus" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+                            <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">No invoices found</div>
+                            <div style="font-size: 14px;">
+                                {% if current_status %}No {{ current_status|lower }} invoices{% if search_query %} matching "{{ search_query }}"{% endif %}.
+                                {% elif search_query %}No invoices found for "{{ search_query }}".
+                                {% else %}No invoices have been generated yet.{% endif %}
+                            </div>
+                            {% if current_status or search_query %}
+                            <a href="{% url 'invoice_list' %}" class="pc-btn pc-btn--ghost" style="margin-top: 20px; border-radius: 9px; display: inline-flex;">Clear filters</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ── Status change modal ────────────────────────────────────────────────────── #}
+<div id="statusModal"
+     style="display: none; position: fixed; inset: 0; background: rgba(20,30,48,0.45); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="pc-card" style="width: 420px; border-radius: 16px; padding: 0; box-shadow: 0 24px 64px rgba(0,0,0,0.22);">
+        <div id="statusModalHead" class="pc-card-head" style="padding: 18px 24px; border-radius: 16px 16px 0 0;">
+            <span id="statusModalTitle" style="color: #fff; font-weight: 700; font-size: 16px;"></span>
+            <button onclick="closeStatusModal()" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px;">
+                <i data-feather="x" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+        <div class="pc-card-body" style="padding: 24px;">
+            <p id="statusModalBody" style="color: #37485a; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;"></p>
+            <div class="pc-alert pc-alert--warning" style="font-size: 13px; margin-bottom: 20px; padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start;">
+                <i data-feather="alert-triangle" style="width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+                <span>This will be logged in the audit trail and cannot be undone automatically.</span>
+            </div>
+            <form id="statusModalForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="statusModalValue" name="status" value="">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeStatusModal()"
+                            class="pc-btn pc-btn--ghost" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" id="statusModalSubmit"
+                            class="pc-btn pc-btn--primary" style="border-radius: 8px;"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const STATUS_META = {
+    PAID:     { label: 'Mark as Paid',              confirm: 'Confirm Payment Received', bg: 'linear-gradient(135deg,#0ca789,#1fa574)', btn: 'Confirm Paid' },
+    PARTIAL:  { label: 'Mark as Partially Paid',    confirm: 'Mark Partially Paid',      bg: 'linear-gradient(135deg,#e6a817,#d09410)', btn: 'Confirm Partial' },
+    UNPAID:   { label: 'Revert to Unpaid',          confirm: 'Revert to Unpaid',         bg: 'linear-gradient(135deg,#c0392b,#e74c3c)', btn: 'Yes, Revert'  },
+    REFUNDED: { label: 'Mark as Refunded',          confirm: 'Mark as Refunded / Cancelled', bg: 'linear-gradient(135deg,#596578,#37485a)', btn: 'Confirm Refund' },
+};
+
+function openStatusModal(pk, patient, newStatus, currentStatus) {
+    const meta = STATUS_META[newStatus];
+    const modal = document.getElementById('statusModal');
+    const head  = document.getElementById('statusModalHead');
+    const title = document.getElementById('statusModalTitle');
+    const body  = document.getElementById('statusModalBody');
+    const form  = document.getElementById('statusModalForm');
+    const val   = document.getElementById('statusModalValue');
+    const submit = document.getElementById('statusModalSubmit');
+
+    form.action = `/billing/manage/${pk}/status/`;
+    val.value = newStatus;
+    head.style.background = meta.bg;
+    title.textContent = meta.confirm;
+    body.innerHTML = `You are updating <strong>Invoice #${pk}</strong> for <strong>${patient}</strong>.<br>
+                      Current status: <em>${currentStatus}</em> → <strong>${newStatus}</strong>`;
+    submit.textContent = meta.btn;
+    modal.style.display = 'flex';
+    // Re-init feather icons inside modal
+    if (window.feather) feather.replace();
+}
+
+function closeStatusModal() {
+    document.getElementById('statusModal').style.display = 'none';
+}
+
+// Close on backdrop click
+document.getElementById('statusModal').addEventListener('click', function(e) {
+    if (e.target === this) closeStatusModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatusModal(); });
+</script>
+{% endblock %}

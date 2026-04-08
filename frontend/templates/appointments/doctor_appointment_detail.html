@@ -50,9 +50,12 @@
                     <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <strong style="color: #6c7c93; font-weight: 500;">Status:</strong> 
-                            {% if appointment.status == 'Scheduled' %}<span class="pc-chip pc-chip--scheduled" style="padding: 4px 10px;">{{ appointment.status }}</span>
-                            {% elif appointment.status == 'Completed' %}<span class="pc-chip pc-chip--completed" style="padding: 4px 10px;">{{ appointment.status }}</span>
-                            {% else %}<span class="pc-chip pc-chip--pending" style="padding: 4px 10px;">{{ appointment.status }}</span>{% endif %}
+                            {% if appointment.status == 'SCHEDULED' %}<span class="pc-chip" style="padding: 4px 10px; background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef0;">Scheduled</span>
+                            {% elif appointment.status == 'RESCHEDULED' %}<span class="pc-chip" style="padding: 4px 10px; background: #f0f4fc; color: #5b8af5; border: 1px solid #c2d2f5;">Rescheduled</span>
+                            {% elif appointment.status == 'COMPLETED' %}<span class="pc-chip pc-chip--confirmed" style="padding: 4px 10px;">Completed</span>
+                            {% elif appointment.status == 'CANCELLED' %}<span class="pc-chip pc-chip--danger" style="padding: 4px 10px;">Cancelled</span>
+                            {% elif appointment.status == 'NOSHOW' %}<span class="pc-chip" style="padding: 4px 10px; background: #f5f0fc; color: #7b5ea7; border: 1px solid #d9cdf0;">No Show</span>
+                            {% else %}<span class="pc-chip" style="padding: 4px 10px;">{{ appointment.get_status_display }}</span>{% endif %}
                         </div>
                         <div style="display: flex; flex-direction: column;">
                             <strong style="color: #6c7c93; font-weight: 500; margin-bottom: 4px;">Date & Time</strong>
@@ -78,7 +81,7 @@
                     </div>
                     <div class="pc-card-body" style="padding: 24px;">
                         <h6 style="color: #1a322c; margin: 0 0 12px 0;">Clinical Notes</h6>
-                        <p style="color: #596578; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #f0f4f8; margin-bottom: 32px; white-space: pre-wrap;">{{ prescription.notes|default:"-" }}</p>
+                        <p style="color: #596578; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #f0f4f8; margin-bottom: 32px; white-space: pre-wrap;">{{ visit.notes|default:"-" }}</p>
 
                         <h6 style="color: #1a322c; margin: 0 0 12px 0;">Registered Treatment Plan</h6>
                         <div class="pc-table-wrap" style="border-radius: 8px;">

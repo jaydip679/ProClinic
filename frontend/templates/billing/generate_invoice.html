@@ -1,83 +1,340 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .billing-grid { display: grid; grid-template-columns: 2.5fr 1fr; gap: 24px; }
+    .bill-row { display: grid; grid-template-columns: 1fr 2fr 2fr 80px 100px 100px 40px; gap: 8px; align-items: start; margin-bottom: 12px; }
+    .bill-heading { font-weight: 600; font-size: 13px; color: #596578; padding-bottom: 8px; border-bottom: 1px solid #ebf0f6; margin-bottom: 12px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+</style>
+
 <div class="pc-section">
-    <div style="margin-bottom: var(--pc-space-5);">
-        <h2 class="pc-h2" style="margin: 0;">Generate Invoice</h2>
-        <p class="pc-muted" style="margin-top: 4px;">Create a new billing statement for a patient</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--pc-space-5);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Generate Invoice</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Dynamic billing, consultation & medicine generation.</p>
+        </div>
     </div>
 
     <form method="post" id="invoiceForm">
         {% csrf_token %}
-        <div class="pc-card" style="margin-bottom: var(--pc-space-5);">
-            <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f);">
-                <span style="color: #fff; font-weight: 600;">Billing Details</span>
+        
+        <div class="billing-grid">
+            <!-- Left Column: Items -->
+            <div class="pc-card">
+                <div class="pc-card-head" style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color: #37485a;">Line Items</strong>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--ghost" id="fetchRxBtn">
+                            <i data-feather="download" style="width: 14px;"></i> Load Prescribed Medicines
+                        </button>
+                    </div>
+                </div>
+                <div class="pc-card-body">
+                    <div class="bill-row bill-heading">
+                        <div>Type</div>
+                        <div>Service / Medicine</div>
+                        <div>Notes / Dosage</div>
+                        <div>Qty</div>
+                        <div>Unit Price</div>
+                        <div>Total</div>
+                        <div></div>
+                    </div>
+                    
+                    <div id="lineItemsContainer">
+                        <!-- Dynamic rows will be inserted here -->
+                    </div>
+
+                    <div style="margin-top: 16px; display: flex; gap: 8px;">
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('MEDICINE')">
+                            + Add Medicine
+                        </button>
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('CONSULTATION', 'General Consultation', 500.00)">
+                            + Add Consultation
+                        </button>
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('OTHER')">
+                            + Add Custom Charge
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="pc-card-body">
-                <div class="pc-grid">
-                    <div class="pc-col-5">
-                        <div class="pc-form-row">
+
+            <!-- Right Column: Patient Details & Totals -->
+            <div>
+                <div class="pc-card" style="margin-bottom: 24px;">
+                    <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f);">
+                        <span style="color: #fff; font-weight: 600;">Link Account</span>
+                    </div>
+                    <div class="pc-card-body">
+                        <div style="margin-bottom: 12px;">
                             <label class="pc-label">{{ form.patient.label }}</label>
                             {{ form.patient }}
                         </div>
-                    </div>
-                    <div class="pc-col-5">
-                        <div class="pc-form-row">
+                        <div style="margin-bottom: 12px;">
                             <label class="pc-label">{{ form.appointment.label }}</label>
                             {{ form.appointment }}
                         </div>
-                    </div>
-                    <div class="pc-col-2">
-                        <div class="pc-form-row">
-                            <label class="pc-label">{{ form.status.label }}</label>
+                        <div>
+                            <label class="pc-label">Status Override</label>
                             {{ form.status }}
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="pc-card">
-            <div class="pc-card-head">
-                <strong style="color: #37485a;">Line Items</strong>
-            </div>
-            <div class="pc-card-body" style="padding: 0;">
-                {{ formset.management_form }}
-                <div class="pc-table-wrap">
-                    <table class="pc-table" id="line-items-table">
-                        <thead><tr><th>Service</th><th>Unit Cost</th><th>Qty</th></tr></thead>
-                        <tbody>
-                            {% for f in formset %}
-                            <tr>
-                                <td>{{ f.service_name }}</td>
-                                <td>{{ f.unit_cost }}</td>
-                                <td>{{ f.quantity }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="pc-card">
+                    <div class="pc-card-head">
+                        <strong style="color: #37485a;">Financials</strong>
+                    </div>
+                    <div class="pc-card-body" style="background: #fafbfc;">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <strong id="display_subtotal">$0.00</strong>
+                            <input type="hidden" name="subtotal" id="input_subtotal" value="0">
+                        </div>
+                        <div class="summary-row" style="align-items: center;">
+                            <span>Discount ($)</span>
+                            <input type="number" class="pc-input" style="width: 100px; text-align: right;" id="input_discount" name="discount_amount" value="0" step="0.01">
+                        </div>
+                        <div class="summary-row" style="align-items: center; border-bottom: 1px solid #ebf0f6; padding-bottom: 12px; margin-bottom: 12px;">
+                            <span>Tax ($)</span>
+                            <input type="number" class="pc-input" style="width: 100px; text-align: right;" id="input_tax" name="tax_amount" value="0" step="0.01">
+                        </div>
+                        
+                        <div class="summary-row" style="font-size: 18px; color: #2c3e91;">
+                            <strong>Grand Total</strong>
+                            <strong id="display_grand_total">$0.00</strong>
+                            <input type="hidden" name="grand_total" id="input_grand_total" value="0">
+                        </div>
+
+                        <div class="summary-row" style="align-items: center; margin-top: 16px;">
+                            <span style="color: #0ca789; font-weight: 600;">Amount Paid Now</span>
+                            <input type="number" class="pc-input" style="width: 120px; text-align: right; border-color: #0ca789;" id="input_paid" name="paid_amount" value="0" step="0.01">
+                        </div>
+                        
+                        <div class="summary-row" style="margin-top: 12px; color: #e23e57;">
+                            <strong style="font-size: 14px;">Due Amount</strong>
+                            <strong id="display_due">$0.00</strong>
+                            <input type="hidden" name="due_amount" id="input_due" value="0">
+                        </div>
+                    </div>
+                    <div class="pc-card-body" style="border-top: 1px solid #ebf0f6;">
+                        <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%;">Process Bill</button>
+                    </div>
                 </div>
-            </div>
-            <div class="pc-card-body" style="border-top: 1px solid #ebf0f6;">
-                <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%;">Finalize & Generate Bill</button>
             </div>
         </div>
     </form>
 </div>
 
+<datalist id="medicineOptions"></datalist>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const formFields = document.querySelectorAll('#invoiceForm input, #invoiceForm select, #invoiceForm textarea');
-        formFields.forEach(field => {
-            if (field.type === 'hidden' || field.type === 'submit') return;
-            if (field.tagName === 'SELECT') {
-                field.classList.add('pc-select');
-            } else if (field.tagName === 'TEXTAREA') {
-                field.classList.add('pc-textarea');
+        // Initialize simple styling
+        document.querySelectorAll('select').forEach(e => e.classList.add('pc-select'));
+        const preAppt = "{{ pre_appt|default:'' }}";
+        
+        // State limits
+        const container = document.getElementById('lineItemsContainer');
+        const inputDisc = document.getElementById('input_discount');
+        const inputTax = document.getElementById('input_tax');
+        const inputPaid = document.getElementById('input_paid');
+        const statusSelect = document.getElementById('id_status');
+        const patientSelect = document.getElementById('id_patient');
+        const apptSelect = document.getElementById('id_appointment');
+        let knownMedicines = {}; // mapped by lowercase name for fast price lookup
+        let hasDefaultConsultation = false;
+        
+        // 1. Fetch medicine catalog
+        fetch('/billing/api/medicines/')
+            .then(res => res.json())
+            .then(data => {
+                const datalist = document.getElementById('medicineOptions');
+                if (data.medicines && data.medicines.length) {
+                    data.medicines.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        datalist.appendChild(opt);
+                        knownMedicines[m.name.toLowerCase()] = m.default_price;
+                    });
+                }
+            });
+
+        // 1.5 Dynamic Appointment Fetching
+        const loadAppointments = async (patientId, selectedApptId = null) => {
+            apptSelect.innerHTML = '<option value="">---------</option>';
+            if (!patientId) {
+                apptSelect.disabled = true;
+                return;
+            }
+            apptSelect.disabled = false;
+            try {
+                const resp = await fetch(`/billing/api/patient_appointments/?patient_id=${patientId}`);
+                const data = await resp.json();
+                if (data.appointments) {
+                    data.appointments.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.innerText = a.label;
+                        if (selectedApptId && a.id.toString() === selectedApptId.toString()) {
+                            opt.selected = true;
+                        }
+                        apptSelect.appendChild(opt);
+                    });
+                }
+            } catch(e) {
+                console.error("Failed to load appointments:", e);
+            }
+        };
+
+        if (patientSelect) {
+            patientSelect.addEventListener('change', (e) => {
+                loadAppointments(e.target.value);
+            });
+            // Init if patient is already selected (e.g., from form validation bounce)
+            if (patientSelect.value) {
+                loadAppointments(patientSelect.value, preAppt || apptSelect.getAttribute('data-pre-selected') || apptSelect.value);
             } else {
-                field.classList.add('pc-input');
+                apptSelect.disabled = true;
+                apptSelect.innerHTML = '<option value="">Select Patient First</option>';
+            }
+        }
+
+        // 2. Load Rx Button
+        document.getElementById('fetchRxBtn').addEventListener('click', async () => {
+            const apptId = document.getElementById('id_appointment').value;
+            if(!apptId) return alert('Select an appointment first to load prescriptions.');
+            
+            const btn = document.getElementById('fetchRxBtn');
+            btn.innerHTML = '<i class="feather-loader"></i> Loading...';
+            try {
+                const r = await fetch(`/billing/api/prescription_context/?appointment_id=${apptId}`);
+                const data = await r.json();
+                if(data.items && data.items.length > 0) {
+                    data.items.forEach(i => {
+                        let price = knownMedicines[i.medicine_name.toLowerCase()] || 0.00;
+                        addLineItem('MEDICINE', i.medicine_name, price, 1, `${i.dosage} - ${i.instructions} (${i.duration})`);
+                    });
+                } else {
+                    alert('No medicines prescribed for this appointment found.');
+                }
+            } catch(e) { console.error(e); }
+            btn.innerHTML = '<i data-feather="download" style="width: 14px;"></i> Load Prescribed Medicines';
+            feather.replace();
+        });
+
+        // 3. Grid Dynamics
+        window.addLineItem = (type='OTHER', name='', cost=0, qty=1, notes='') => {
+            const row = document.createElement('div');
+            row.className = 'bill-row line-item-wrapper';
+            
+            row.innerHTML = `
+                <select name="item_type[]" class="pc-select" style="padding: 6px; font-size: 13px;">
+                    <option value="CONSULTATION" ${type==='CONSULTATION'?'selected':''}>Consultation</option>
+                    <option value="MEDICINE" ${type==='MEDICINE'?'selected':''}>Medicine</option>
+                    <option value="LAB" ${type==='LAB'?'selected':''}>Lab Test</option>
+                    <option value="PROCEDURE" ${type==='PROCEDURE'?'selected':''}>Procedure</option>
+                    <option value="OTHER" ${type==='OTHER'?'selected':''}>Other</option>
+                </select>
+                <input type="text" name="service_name[]" class="pc-input js-calc-name" value="${name}" list="medicineOptions" style="padding: 6px; font-size: 13px;" required placeholder="Item name">
+                <input type="text" name="notes[]" class="pc-input" value="${notes}" style="padding: 6px; font-size: 13px;" placeholder="Optional">
+                <input type="number" name="quantity[]" class="pc-input js-calc-qty" value="${qty}" min="1" style="padding: 6px; font-size: 13px;">
+                <input type="number" name="unit_cost[]" class="pc-input js-calc-cost" value="${parseFloat(cost).toFixed(2)}" step="0.01" style="padding: 6px; font-size: 13px;">
+                <input type="text" class="pc-input" readonly value="$0.00" style="padding: 6px; font-size: 13px; background:#f4f7f9; text-align:right;">
+                <button type="button" class="pc-btn pc-btn--danger pc-btn--sm" onclick="this.closest('.line-item-wrapper').remove(); calculateTotals();" style="padding: 4px; height: 32px;"><i data-feather="trash-2"></i></button>
+            `;
+            
+            container.appendChild(row);
+            feather.replace();
+
+            // Bind listeners — both 'input' (keystrokes) and 'change' (spinner/paste/autofill)
+            const inputs = row.querySelectorAll('.js-calc-qty, .js-calc-cost');
+            inputs.forEach(i => {
+                i.addEventListener('input', calculateTotals);
+                i.addEventListener('change', calculateTotals);
+            });
+
+            // Price auto-fill for medicines
+            const nameInput = row.querySelector('.js-calc-name');
+            nameInput.addEventListener('change', (e) => {
+                let v = e.target.value.toLowerCase();
+                if(knownMedicines[v]) {
+                    row.querySelector('.js-calc-cost').value = parseFloat(knownMedicines[v]).toFixed(2);
+                    calculateTotals();
+                }
+            });
+
+            calculateTotals();
+        };
+
+        // 4. Heavy Lifting Calculation
+        window.calculateTotals = () => {
+            let subtotal = 0;
+            document.querySelectorAll('.line-item-wrapper').forEach(row => {
+                let qty = parseFloat(row.querySelector('.js-calc-qty').value) || 0;
+                let cost = parseFloat(row.querySelector('.js-calc-cost').value) || 0;
+                let totalStr = (qty * cost).toFixed(2);
+                row.querySelectorAll('input[readonly]')[0].value = '$' + totalStr;
+                subtotal += (qty * cost);
+            });
+
+            let discount = parseFloat(inputDisc.value) || 0;
+            let tax = parseFloat(inputTax.value) || 0;
+            let grand = (subtotal - discount) + tax;
+            if(grand < 0) grand = 0;
+
+            let paid = parseFloat(inputPaid.value) || 0;
+            let due = grand - paid;
+            if(due < 0) due = 0; // Prevent negative due
+
+            // Auto-assign Status
+            if(paid >= grand && grand > 0) {
+                statusSelect.value = 'PAID';
+            } else if(paid > 0 && paid < grand) {
+                statusSelect.value = 'PARTIAL';
+            } else if(paid === 0) {
+                statusSelect.value = 'UNPAID';
+            }
+
+            // Update DOM
+            document.getElementById('display_subtotal').innerText = '$' + subtotal.toFixed(2);
+            document.getElementById('input_subtotal').value = subtotal.toFixed(2);
+            
+            document.getElementById('display_grand_total').innerText = '$' + grand.toFixed(2);
+            document.getElementById('input_grand_total').value = grand.toFixed(2);
+            
+            document.getElementById('display_due').innerText = '$' + due.toFixed(2);
+            document.getElementById('input_due').value = due.toFixed(2);
+        };
+
+        // Bind global modifier listeners
+        inputDisc.addEventListener('input', calculateTotals);
+        inputDisc.addEventListener('change', calculateTotals);
+        inputTax.addEventListener('input', calculateTotals);
+        inputTax.addEventListener('change', calculateTotals);
+        inputPaid.addEventListener('input', calculateTotals);
+        inputPaid.addEventListener('change', calculateTotals);
+
+        // ── Final recalculation guard on submit ───────────────────────────────
+        // Runs calculateTotals() immediately before the form is submitted so that
+        // any price/qty edits that did not trigger an input event (e.g. spinner
+        // arrows, browser autofill, or paste without blur) are captured and the
+        // hidden fields carry the correct values to the backend.
+        document.getElementById('invoiceForm').addEventListener('submit', (e) => {
+            calculateTotals();
+            // Prevent submission if no line items
+            const rows = document.querySelectorAll('.line-item-wrapper');
+            if (rows.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one line item before generating the invoice.');
             }
         });
+        
+        // Add one empty row natively if none exists (prevents arbitrary duplication on validation bounces)
+        if (container.children.length === 0 && !hasDefaultConsultation) {
+            addLineItem('CONSULTATION', 'General Consultation', 500.00);
+            hasDefaultConsultation = true;
+        }
     });
 </script>
 {% endblock %}

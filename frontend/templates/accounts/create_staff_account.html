@@ -3,73 +3,93 @@
 {% block title %}Create Staff Account{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Create New Staff Account</h5>
+<div class="pc-section" style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <h2 class="pc-h2" style="margin: 0;">Create New Staff Account</h2>
+        <p style="color: #6f8295; font-size: 14px; margin-top: 4px;">Only administrators can create staff users. Choose the role carefully before saving.</p>
+    </div>
+
+    <div class="pc-card">
+        <div class="pc-card-body" style="padding: 30px;">
+            {% if form.non_field_errors %}
+                <div class="pc-alert pc-alert--danger" style="margin-bottom: 24px;">
+                    {{ form.non_field_errors }}
                 </div>
-                <div class="card-body">
-                    <p class="text-muted">
-                        Only administrators can create staff users. Choose the role before saving.
-                    </p>
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First name</label>
-                                {{ form.first_name }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last name</label>
-                                {{ form.last_name }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                                {{ form.username }}
-                                {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.role.id_for_label }}" class="form-label">Role</label>
-                                {{ form.role }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                                {{ form.email }}
-                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone number</label>
-                                {{ form.phone_number }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
-                                {{ form.password1 }}
-                                {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors|striptags }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm password</label>
-                                {{ form.password2 }}
-                                {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors|striptags }}</div>{% endif %}
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-4">Create Staff Account</button>
-                    </form>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="pc-grid" style="gap: 20px;">
+                    <div class="pc-col-6">
+                        <label for="{{ form.first_name.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">First name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.last_name.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Last name</label>
+                        {{ form.last_name }}
+                    </div>
+
+                    <div class="pc-col-6">
+                        <label for="{{ form.username.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Username <span style="color: #dc2626;">*</span></label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ form.username.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.role.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Role <span style="color: #dc2626;">*</span></label>
+                        {{ form.role }}
+                    </div>
+
+                    <div class="pc-col-6">
+                        <label for="{{ form.email.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Email Address <span style="color: #dc2626;">*</span></label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ form.email.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.phone_number.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Phone number</label>
+                        {{ form.phone_number }}
+                    </div>
+
+                    <div class="pc-col-6">
+                        <label for="{{ form.password1.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Password <span style="color: #dc2626;">*</span></label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}<div style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ form.password1.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="pc-col-6">
+                        <label for="{{ form.password2.id_for_label }}" style="display: block; font-size: 13px; font-weight: 600; color: #24323b; margin-bottom: 6px;">Confirm password <span style="color: #dc2626;">*</span></label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}<div style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ form.password2.errors|striptags }}</div>{% endif %}
+                    </div>
                 </div>
-            </div>
+                
+                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4eaf2; display: flex; justify-content: flex-end;">
+                    <a href="{% url 'dashboard' %}" class="pc-btn pc-btn--ghost" style="margin-right: 12px;">Cancel</a>
+                    <button type="submit" class="pc-btn pc-btn--primary">Create Staff Account</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<script>
-    document.querySelectorAll("input, select").forEach(function (el) {
-        el.classList.add("form-control");
-    });
-</script>
+<style>
+    /* Styling for the django form fields to match design system since we are rendering the widget directly */
+    .pc-card-body form input[type="text"],
+    .pc-card-body form input[type="email"],
+    .pc-card-body form input[type="password"],
+    .pc-card-body form select {
+        width: 100%;
+        padding: 10px 14px;
+        font-size: 14px;
+        border: 1px solid #cbd4e1;
+        border-radius: 8px;
+        background: #fff;
+        color: #24323b;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pc-card-body form input:focus,
+    .pc-card-body form select:focus {
+        border-color: #0ca789;
+        box-shadow: 0 0 0 3px rgba(12, 167, 137, 0.15);
+        outline: none;
+    }
+</style>
 {% endblock %}

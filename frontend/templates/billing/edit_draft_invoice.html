@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Draft Invoice #{{ invoice.pk }} — ProClinic{% endblock %}
+
+{% block content %}
+<style>
+    .billing-grid { display: grid; grid-template-columns: 2.5fr 1fr; gap: 24px; }
+    .bill-row { display: grid; grid-template-columns: 1fr 2fr 2fr 80px 100px 100px 40px; gap: 8px; align-items: start; margin-bottom: 12px; }
+    .bill-heading { font-weight: 600; font-size: 13px; color: #596578; padding-bottom: 8px; border-bottom: 1px solid #ebf0f6; margin-bottom: 12px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+</style>
+
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'invoice_detail' invoice.pk %}" class="pc-btn pc-btn--ghost"
+           style="padding: 6px; min-height: 34px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <i data-feather="arrow-left" style="width: 16px; height: 16px;"></i> Back to Invoice
+        </a>
+        <span style="color: #98a1b3; font-size: 13px;">Invoice #{{ invoice.pk }}</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--pc-space-5);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Edit Draft Invoice #{{ invoice.pk }}</h2>
+            <p class="pc-muted" style="margin-top: 4px;">
+                Adjust prices, quantities, discount, and tax — then publish.
+            </p>
+        </div>
+        <span class="pc-chip" style="padding: 8px 18px; font-size: 13px; background: #f0f4f8; color: #596578; border: 1px solid #d0d8e4; font-weight: 700;">
+            <i data-feather="edit-3" style="width: 13px; height: 13px; display: inline; margin-right: 4px;"></i>DRAFT
+        </span>
+    </div>
+
+    <form method="post" id="editDraftForm">
+        {% csrf_token %}
+
+        <div class="billing-grid">
+            <!-- Left Column: Line Items -->
+            <div class="pc-card">
+                <div class="pc-card-head" style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color: #37485a;">Line Items</strong>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--ghost" id="fetchRxBtn"
+                                {% if not invoice.appointment %}disabled title="No linked appointment"{% endif %}>
+                            <i data-feather="download" style="width: 14px;"></i> Load Prescribed Medicines
+                        </button>
+                    </div>
+                </div>
+                <div class="pc-card-body">
+                    <div class="bill-row bill-heading">
+                        <div>Type</div>
+                        <div>Service / Medicine</div>
+                        <div>Notes / Dosage</div>
+                        <div>Qty</div>
+                        <div>Unit Price</div>
+                        <div>Total</div>
+                        <div></div>
+                    </div>
+
+                    <div id="lineItemsContainer">
+                        <!-- Pre-filled rows injected by JS from existing_items -->
+                    </div>
+
+                    <div style="margin-top: 16px; display: flex; gap: 8px;">
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('MEDICINE')">
+                            + Add Medicine
+                        </button>
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('CONSULTATION', 'General Consultation', 500.00)">
+                            + Add Consultation
+                        </button>
+                        <button type="button" class="pc-btn pc-btn--sm pc-btn--outline" onclick="addLineItem('OTHER')">
+                            + Add Custom Charge
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Patient + Totals -->
+            <div>
+                <!-- Patient info -->
+                <div class="pc-card" style="margin-bottom: 24px;">
+                    <div class="pc-card-head" style="background: linear-gradient(135deg, #2c3e91, #1e2f7f);">
+                        <span style="color: #fff; font-weight: 600;">Patient</span>
+                    </div>
+                    <div class="pc-card-body">
+                        <div style="font-weight: 700; font-size: 16px; color: #1a2e3b; margin-bottom: 4px;">
+                            {{ invoice.patient }}
+                        </div>
+                        {% if invoice.appointment %}
+                        <div style="font-size: 13px; color: #6f8295; margin-top: 8px;">
+                            <i data-feather="calendar" style="width: 13px; height: 13px; display: inline;"></i>
+                            {{ invoice.appointment.scheduled_time|date:"M d, Y H:i" }}
+                        </div>
+                        {% endif %}
+                        <!-- Hidden fields to keep patient/appointment linkage -->
+                        <input type="hidden" name="patient" value="{{ invoice.patient_id }}">
+                        <input type="hidden" name="appointment" value="{{ invoice.appointment_id|default:'' }}">
+                    </div>
+                </div>
+
+                <!-- Financials -->
+                <div class="pc-card">
+                    <div class="pc-card-head">
+                        <strong style="color: #37485a;">Financials</strong>
+                    </div>
+                    <div class="pc-card-body" style="background: #fafbfc;">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <strong id="display_subtotal">₹0.00</strong>
+                            <input type="hidden" name="subtotal" id="input_subtotal" value="0">
+                        </div>
+                        <div class="summary-row" style="align-items: center;">
+                            <span>Discount (₹)</span>
+                            <input type="number" class="pc-input" style="width: 100px; text-align: right;"
+                                   id="input_discount" name="discount_amount"
+                                   value="{{ invoice.discount_amount|floatformat:2 }}" step="0.01">
+                        </div>
+                        <div class="summary-row" style="align-items: center; border-bottom: 1px solid #ebf0f6; padding-bottom: 12px; margin-bottom: 12px;">
+                            <span>Tax (₹)</span>
+                            <input type="number" class="pc-input" style="width: 100px; text-align: right;"
+                                   id="input_tax" name="tax_amount"
+                                   value="{{ invoice.tax_amount|floatformat:2 }}" step="0.01">
+                        </div>
+
+                        <div class="summary-row" style="font-size: 18px; color: #2c3e91;">
+                            <strong>Grand Total</strong>
+                            <strong id="display_grand_total">₹0.00</strong>
+                            <input type="hidden" name="grand_total" id="input_grand_total" value="0">
+                        </div>
+
+                        <div class="summary-row" style="align-items: center; margin-top: 16px;">
+                            <span style="color: #0ca789; font-weight: 600;">Amount Paid Now</span>
+                            <input type="number" class="pc-input" style="width: 120px; text-align: right; border-color: #0ca789;"
+                                   id="input_paid" name="paid_amount" value="0" step="0.01">
+                        </div>
+
+                        <div class="summary-row" style="margin-top: 12px; color: #e23e57;">
+                            <strong style="font-size: 14px;">Due Amount</strong>
+                            <strong id="display_due">₹0.00</strong>
+                            <input type="hidden" name="due_amount" id="input_due" value="0">
+                        </div>
+
+                        <div class="summary-row" style="margin-top: 16px; align-items: center;">
+                            <span style="font-size: 13px; color: #596578;">Publish as</span>
+                            <select name="status" id="id_status" class="pc-select" style="width: 140px;">
+                                <option value="UNPAID">Unpaid (Publish)</option>
+                                <option value="DRAFT">Keep as Draft</option>
+                                <option value="PARTIAL">Partial</option>
+                                <option value="PAID">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pc-card-body" style="border-top: 1px solid #ebf0f6;">
+                        <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%; font-size: 15px;">
+                            <i data-feather="save" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Save &amp; Publish Invoice
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<datalist id="medicineOptions"></datalist>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container   = document.getElementById('lineItemsContainer');
+    const inputDisc   = document.getElementById('input_discount');
+    const inputTax    = document.getElementById('input_tax');
+    const inputPaid   = document.getElementById('input_paid');
+    const statusSelect = document.getElementById('id_status');
+    let knownMedicines = {};
+
+    // ── 1. Medicine catalog ───────────────────────────────────────────────────
+    fetch('/billing/api/medicines/')
+        .then(r => r.json())
+        .then(data => {
+            const dl = document.getElementById('medicineOptions');
+            (data.medicines || []).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.name;
+                dl.appendChild(opt);
+                knownMedicines[m.name.toLowerCase()] = m.default_price;
+            });
+        });
+
+    // ── 2. addLineItem helper (shared logic) ──────────────────────────────────
+    window.addLineItem = (type = 'OTHER', name = '', cost = 0, qty = 1, notes = '') => {
+        const row = document.createElement('div');
+        row.className = 'bill-row line-item-wrapper';
+        row.innerHTML = `
+            <select name="item_type[]" class="pc-select" style="padding: 6px; font-size: 13px;">
+                <option value="CONSULTATION" ${type==='CONSULTATION'?'selected':''}>Consultation</option>
+                <option value="MEDICINE"     ${type==='MEDICINE'?'selected':''}>Medicine</option>
+                <option value="LAB"          ${type==='LAB'?'selected':''}>Lab Test</option>
+                <option value="PROCEDURE"    ${type==='PROCEDURE'?'selected':''}>Procedure</option>
+                <option value="OTHER"        ${type==='OTHER'?'selected':''}>Other</option>
+            </select>
+            <input type="text"   name="service_name[]" class="pc-input js-calc-name" value="${name}"
+                   list="medicineOptions" style="padding: 6px; font-size: 13px;" required placeholder="Item name">
+            <input type="text"   name="notes[]"        class="pc-input" value="${notes}"
+                   style="padding: 6px; font-size: 13px;" placeholder="Optional">
+            <input type="number" name="quantity[]"     class="pc-input js-calc-qty" value="${qty}"
+                   min="1" style="padding: 6px; font-size: 13px;">
+            <input type="number" name="unit_cost[]"    class="pc-input js-calc-cost" value="${parseFloat(cost).toFixed(2)}"
+                   step="0.01" style="padding: 6px; font-size: 13px;">
+            <input type="text" class="pc-input" readonly value="₹0.00"
+                   style="padding: 6px; font-size: 13px; background:#f4f7f9; text-align:right;">
+            <button type="button" class="pc-btn pc-btn--danger pc-btn--sm"
+                    onclick="this.closest('.line-item-wrapper').remove(); calculateTotals();"
+                    style="padding: 4px; height: 32px;">
+                <i data-feather="trash-2"></i>
+            </button>
+        `;
+        container.appendChild(row);
+        feather.replace();
+
+        // Bind listeners
+        row.querySelectorAll('.js-calc-qty, .js-calc-cost').forEach(el => {
+            el.addEventListener('input',  calculateTotals);
+            el.addEventListener('change', calculateTotals);
+        });
+        // Price auto-fill
+        row.querySelector('.js-calc-name').addEventListener('change', e => {
+            const v = e.target.value.toLowerCase();
+            if (knownMedicines[v]) {
+                row.querySelector('.js-calc-cost').value = parseFloat(knownMedicines[v]).toFixed(2);
+                calculateTotals();
+            }
+        });
+
+        calculateTotals();
+    };
+
+    // ── 3. Calculation ────────────────────────────────────────────────────────
+    window.calculateTotals = () => {
+        let subtotal = 0;
+        document.querySelectorAll('.line-item-wrapper').forEach(row => {
+            const qty  = parseFloat(row.querySelector('.js-calc-qty').value)  || 0;
+            const cost = parseFloat(row.querySelector('.js-calc-cost').value) || 0;
+            const lt   = qty * cost;
+            row.querySelectorAll('input[readonly]')[0].value = '₹' + lt.toFixed(2);
+            subtotal += lt;
+        });
+
+        const discount = parseFloat(inputDisc.value) || 0;
+        const tax      = parseFloat(inputTax.value)  || 0;
+        let grand      = (subtotal - discount) + tax;
+        if (grand < 0) grand = 0;
+
+        const paid = parseFloat(inputPaid.value) || 0;
+        let due    = grand - paid;
+        if (due < 0) due = 0;
+
+        // Auto status assignment
+        if (paid >= grand && grand > 0)       statusSelect.value = 'PAID';
+        else if (paid > 0 && paid < grand)    statusSelect.value = 'PARTIAL';
+        else if (paid === 0)                  statusSelect.value = 'UNPAID';
+
+        document.getElementById('display_subtotal').innerText   = '₹' + subtotal.toFixed(2);
+        document.getElementById('input_subtotal').value         = subtotal.toFixed(2);
+        document.getElementById('display_grand_total').innerText = '₹' + grand.toFixed(2);
+        document.getElementById('input_grand_total').value      = grand.toFixed(2);
+        document.getElementById('display_due').innerText        = '₹' + due.toFixed(2);
+        document.getElementById('input_due').value              = due.toFixed(2);
+    };
+
+    // ── 4. Global input listeners ─────────────────────────────────────────────
+    [inputDisc, inputTax, inputPaid].forEach(el => {
+        el.addEventListener('input',  calculateTotals);
+        el.addEventListener('change', calculateTotals);
+    });
+
+    // ── 5. Pre-fill from server-side existing_items ───────────────────────────
+    const existingItems = {{ existing_items|safe }};
+    existingItems.forEach(item => {
+        addLineItem(
+            item.item_type,
+            item.service_name,
+            parseFloat(item.unit_cost),
+            item.quantity,
+            item.notes || ''
+        );
+    });
+
+    // ── 6. Final recalc on submit ─────────────────────────────────────────────
+    document.getElementById('editDraftForm').addEventListener('submit', e => {
+        calculateTotals();
+        if (document.querySelectorAll('.line-item-wrapper').length === 0) {
+            e.preventDefault();
+            alert('Please add at least one line item before saving.');
+        }
+    });
+
+    // ── 7. Load Prescribed Medicines button ───────────────────────────────────
+    const fetchBtn = document.getElementById('fetchRxBtn');
+    if (fetchBtn && !fetchBtn.disabled) {
+        const apptId = '{{ invoice.appointment_id|default:"" }}';
+        fetchBtn.addEventListener('click', async () => {
+            fetchBtn.textContent = 'Loading…';
+            try {
+                const r    = await fetch(`/billing/api/prescription_context/?appointment_id=${apptId}`);
+                const data = await r.json();
+                if (data.items && data.items.length) {
+                    data.items.forEach(i => {
+                        const price = knownMedicines[i.medicine_name.toLowerCase()] || 0;
+                        addLineItem('MEDICINE', i.medicine_name, price, 1,
+                                    `${i.dosage} – ${i.instructions} (${i.duration})`);
+                    });
+                } else {
+                    alert('No medicines found for this appointment.');
+                }
+            } catch(err) { console.error(err); }
+            fetchBtn.innerHTML = '<i data-feather="download" style="width:14px;"></i> Load Prescribed Medicines';
+            feather.replace();
+        });
+    }
+});
+</script>
+{% endblock %}

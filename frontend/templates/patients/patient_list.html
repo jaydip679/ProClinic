@@ -2,44 +2,191 @@
 
 {% block content %}
 <div class="pc-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--pc-space-5);">
-        <h2 class="pc-h2" style="margin: 0;">Patient Directory</h2>
-        <a href="/admin/patients/patient/add/" class="pc-btn pc-btn--primary">
-            <i data-feather="plus" style="width: 18px; height: 18px;"></i> Add New Patient
-        </a>
-    </div>
-
-    <div class="pc-card">
-        <div class="pc-table-wrap">
-            <table class="pc-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>DOB</th>
-                        <th>Blood Group</th>
-                        <th>Contact</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for patient in patients %}
-                    <tr>
-                        <td style="font-weight: 600; color: #24323b;">{{ patient.first_name }} {{ patient.last_name }}</td>
-                        <td style="color: #596578;">{{ patient.date_of_birth }}</td>
-                        <td><span class="pc-chip" style="background: #eaf4ff; color: #1f4f99;">{{ patient.blood_group }}</span></td>
-                        <td>{{ patient.contact_number }}</td>
-                        <td>
-                            <a href="{% url 'patient_detail' patient.pk %}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: auto; font-size: 13px;">View Details</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" style="text-align: center; color: #98a1b3; padding: 40px;">No patients found in directory.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-5);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0; margin-bottom: 8px;">System Directory</h2>
+            <p style="color: #6f8295; font-size: 14px; margin: 0;">Search and manage patients and staff members.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            {% if request.user.role == 'ADMIN' %}
+            <a href="{% url 'create_staff_account' %}" class="pc-btn pc-btn--ghost">
+                <i data-feather="shield" style="width: 16px; height: 16px;"></i> Add Staff
+            </a>
+            {% endif %}
+            {% if request.user.role == 'ADMIN' or request.user.role == 'RECEPTIONIST' %}
+            <a href="{% url 'patient_create' %}" class="pc-btn pc-btn--primary">
+                <i data-feather="user-plus" style="width: 16px; height: 16px;"></i> Register Patient
+            </a>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Search Bar -->
+    <div class="pc-card" style="margin-bottom: var(--pc-space-6); background: #fff; padding: 16px 20px; border-radius: 12px; box-shadow: var(--pc-shadow-soft);">
+        <form method="GET" style="display: flex; gap: 12px; align-items: center; margin: 0;">
+            <div style="flex: 1; position: relative;">
+                <i data-feather="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #98a1b3; width: 18px; height: 18px;"></i>
+                <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Search by name, email, username or phone..." 
+                       style="width: 100%; padding: 12px 14px 12px 42px; font-size: 14px; border: 1px solid #cbd4e1; border-radius: 8px; outline: none; background: #f8fafc;">
+            </div>
+            <button type="submit" class="pc-btn pc-btn--primary" style="padding: 12px 24px;">Search</button>
+            {% if search_query %}
+                <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost" style="padding: 12px 16px;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- PATIENTS SECTION -->
+    <div style="margin-bottom: 32px;">
+        <h3 style="font-size: 16px; font-weight: 600; color: #24323b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 8px; height: 8px; background: #0ca789; border-radius: 50%;"></div>
+            Patients {% if patients %}({{ patients|length }}){% endif %}
+        </h3>
+        <div class="pc-card">
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>Blood Group</th>
+                            <th>Contact / Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td style="font-weight: 600; color: #24323b;">{{ patient.first_name }} {{ patient.last_name }}</td>
+                            <td style="color: #596578;">{{ patient.date_of_birth }}</td>
+                            <td><span class="pc-chip" style="background: #eaf4ff; color: #1f4f99;">{{ patient.blood_group }}</span></td>
+                            <td>
+                                <div style="font-size: 13px;">{{ patient.contact_number }}</div>
+                                <div style="font-size: 12px; color: #8e9aab;">{{ patient.email|default:"No email" }}</div>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="{% url 'patient_detail' patient.pk %}" class="pc-btn pc-btn--ghost" style="padding: 4px 10px; min-height: auto; font-size: 13px;">View</a>
+                                    {% if request.user.role == 'ADMIN' or request.user.role == 'RECEPTIONIST' %}
+                                    <a href="{% url 'patient_update' patient.pk %}" class="pc-btn pc-btn--secondary" style="padding: 4px 10px; min-height: auto; font-size: 13px;">Edit</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #98a1b3; padding: 40px;">No patients match the criteria.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if patients.has_other_pages %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 10px;">
+            <div style="color: #6f8295; font-size: 13px;">
+                Showing {{ patients.start_index }} to {{ patients.end_index }} of {{ patients.paginator.count }} patients
+            </div>
+            <div style="display: flex; gap: 4px;">
+                {% if patients.has_previous %}
+                    <a href="?page={{ patients.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="pc-btn pc-btn--ghost" style="padding: 6px 12px; font-size: 13px;">Previous</a>
+                {% endif %}
+                
+                {% for num in patients.paginator.page_range %}
+                    {% if patients.number == num %}
+                        <span class="pc-btn pc-btn--primary" style="padding: 6px 12px; font-size: 13px; background: #0ca789; border: none; cursor: default;">{{ num }}</span>
+                    {% elif num > patients.number|add:'-3' and num < patients.number|add:'3' %}
+                        <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}" class="pc-btn pc-btn--ghost" style="padding: 6px 12px; font-size: 13px;">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if patients.has_next %}
+                    <a href="?page={{ patients.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="pc-btn pc-btn--ghost" style="padding: 6px 12px; font-size: 13px;">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- STAFF SECTIONS (Grouped if exist) -->
+    {% if doctors or receptionists or pharmacists or accountants or admins %}
+    <div style="margin-bottom: 32px;">
+        <h3 style="font-size: 16px; font-weight: 600; color: #24323b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 8px; height: 8px; background: #2c3e91; border-radius: 50%;"></div>
+            Staff Directory
+        </h3>
+        <div class="pc-card">
+            <div class="pc-table-wrap">
+                <table class="pc-table">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Name (Username)</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in doctors %}
+                        <tr>
+                            <td><span class="pc-chip" style="background: #eef1fa; color: #2c3e91;">Doctor</span></td>
+                            <td style="font-weight: 600; color: #24323b;">Dr. {{ d.get_full_name|default:d.username }} <span style="font-weight: 400; color: #8e9aab;">(@{{ d.username }})</span></td>
+                            <td style="color: #596578;">{{ d.email|default:"-" }}</td>
+                            <td>{% if d.is_active %}<span style="color: #0b6e59; font-size: 13px;">Active</span>{% else %}<span style="color: #dc2626; font-size: 13px;">Inactive</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for p in pharmacists %}
+                        <tr>
+                            <td><span class="pc-chip" style="background: #fdf2f2; color: #c81e1e;">Pharmacist</span></td>
+                            <td style="font-weight: 600; color: #24323b;">{{ p.get_full_name|default:p.username }} <span style="font-weight: 400; color: #8e9aab;">(@{{ p.username }})</span></td>
+                            <td style="color: #596578;">{{ p.email|default:"-" }}</td>
+                            <td>{% if p.is_active %}<span style="color: #0b6e59; font-size: 13px;">Active</span>{% else %}<span style="color: #dc2626; font-size: 13px;">Inactive</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for r in receptionists %}
+                        <tr>
+                            <td><span class="pc-chip" style="background: #fdf6b2; color: #723b13;">Receptionist</span></td>
+                            <td style="font-weight: 600; color: #24323b;">{{ r.get_full_name|default:r.username }} <span style="font-weight: 400; color: #8e9aab;">(@{{ r.username }})</span></td>
+                            <td style="color: #596578;">{{ r.email|default:"-" }}</td>
+                            <td>{% if r.is_active %}<span style="color: #0b6e59; font-size: 13px;">Active</span>{% else %}<span style="color: #dc2626; font-size: 13px;">Inactive</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for a in accountants %}
+                        <tr>
+                            <td><span class="pc-chip" style="background: #f0fdf4; color: #046c4e;">Accountant</span></td>
+                            <td style="font-weight: 600; color: #24323b;">{{ a.get_full_name|default:a.username }} <span style="font-weight: 400; color: #8e9aab;">(@{{ a.username }})</span></td>
+                            <td style="color: #596578;">{{ a.email|default:"-" }}</td>
+                            <td>{% if a.is_active %}<span style="color: #0b6e59; font-size: 13px;">Active</span>{% else %}<span style="color: #dc2626; font-size: 13px;">Inactive</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% for admin in admins %}
+                        <tr>
+                            <td><span class="pc-chip" style="background: #f3f4f6; color: #374151;">Admin</span></td>
+                            <td style="font-weight: 600; color: #24323b;">{{ admin.get_full_name|default:admin.username }} <span style="font-weight: 400; color: #8e9aab;">(@{{ admin.username }})</span></td>
+                            <td style="color: #596578;">{{ admin.email|default:"-" }}</td>
+                            <td>{% if admin.is_active %}<span style="color: #0b6e59; font-size: 13px;">Active</span>{% else %}<span style="color: #dc2626; font-size: 13px;">Inactive</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if search_query and not patients and not doctors and not receptionists and not pharmacists and not accountants and not admins %}
+    <div style="text-align: center; padding: 60px 20px;">
+        <div style="width: 64px; height: 64px; background: #f0f4f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <i data-feather="search" style="color: #98a1b3; width: 32px; height: 32px;"></i>
+        </div>
+        <h4 style="margin: 0 0 8px; color: #24323b;">No results found for "{{ search_query }}"</h4>
+        <p style="color: #6f8295; font-size: 14px; margin: 0;">Try adjusting your search criteria.</p>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

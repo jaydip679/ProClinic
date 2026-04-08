@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Doctor Profile{% endblock %}
+{% block title %}My Profile{% endblock %}
 
 {% block content %}
 <div class="pc-section">
     <div style="margin-bottom: var(--pc-space-6);">
-        <h2 class="pc-h2" style="margin: 0;">Doctor Profile</h2>
+        <h2 class="pc-h2" style="margin: 0;">{{ request.user.get_role_display|default:"Staff" }} Profile</h2>
         <p class="pc-muted" style="margin-top: 4px;">Update your professional details and contact information.</p>
     </div>
 
@@ -41,6 +41,14 @@
                     {{ form.email }}
                     {% if form.email.errors %}<div class="pc-inline-error">{{ form.email.errors|striptags }}</div>{% endif %}
                 </div>
+
+                {% if form.specialization %}
+                <div class="pc-form-row" style="margin-bottom: 24px;">
+                    <label for="{{ form.specialization.id_for_label }}" class="pc-label" style="font-size: 13px;">Specialization (Doctors only)</label>
+                    {{ form.specialization }}
+                    {% if form.specialization.errors %}<div class="pc-inline-error">{{ form.specialization.errors|striptags }}</div>{% endif %}
+                </div>
+                {% endif %}
                 
                 <div class="pc-form-row" style="margin-bottom: 32px;">
                     <label for="{{ form.phone_number.id_for_label }}" class="pc-label" style="font-size: 13px;">Phone number</label>

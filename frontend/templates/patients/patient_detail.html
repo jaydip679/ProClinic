@@ -2,12 +2,19 @@
 
 {% block content %}
 <div class="pc-section">
-    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; gap: 12px;">
-        <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost" style="padding: 6px; min-height: 32px;"><i data-feather="arrow-left" style="width: 16px; height: 16px;"></i></a>
-        <div>
-            <h2 class="pc-h2" style="margin: 0;">{{ patient.first_name }} {{ patient.last_name }}</h2>
-            <p class="pc-muted" style="margin-top: 4px;">Patient Medical Record & EHR</p>
+    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="{% url 'patient_list' %}" class="pc-btn pc-btn--ghost" style="padding: 6px; min-height: 32px;"><i data-feather="arrow-left" style="width: 16px; height: 16px;"></i></a>
+            <div>
+                <h2 class="pc-h2" style="margin: 0;">{{ patient.first_name }} {{ patient.last_name }}</h2>
+                <p class="pc-muted" style="margin-top: 4px;">Patient Medical Record & EHR</p>
+            </div>
         </div>
+        {% if request.user.role == 'ADMIN' or request.user.role == 'RECEPTIONIST' %}
+        <a href="{% url 'patient_update' patient.pk %}" class="pc-btn pc-btn--secondary">
+            <i data-feather="edit-2" style="width: 16px; height: 16px;"></i> Edit Patient
+        </a>
+        {% endif %}
     </div>
 
     <div class="pc-grid">
@@ -45,6 +52,7 @@
                 <button type="button" class="tab-btn is-active" data-target="ehr">EHR Timeline</button>
                 <button type="button" class="tab-btn" data-target="prescriptions">Prescriptions</button>
                 <button type="button" class="tab-btn" data-target="billing">Billing Info</button>
+                <button type="button" class="tab-btn" data-target="lab-reports">Lab Reports</button>
             </div>
 
             <div class="pc-card" style="border-radius: 16px;">
@@ -99,7 +107,7 @@
                                     <tr>
                                         <td style="padding: 16px 24px; font-weight: 500;">{{ rx.created_at|date:"M d, Y" }}</td>
                                         <td style="padding: 16px 14px;">Dr. {{ rx.doctor.last_name }}</td>
-                                        <td style="padding: 16px 14px; color: #596578;" title="{{ rx.notes }}">{{ rx.notes|truncatechars:50 }}</td>
+                                        <td style="padding: 16px 14px; color: #596578;" title="{{ rx.visit.notes }}">{{ rx.visit.notes|truncatechars:50 }}</td>
                                         <td style="padding: 16px 24px; text-align: right;">
                                             {% if rx.pdf_file %}
                                             <a href="{{ rx.pdf_file.url }}" class="pc-btn pc-btn--ghost" target="_blank" style="padding: 6px 12px; min-height: 32px; font-size: 13px;">View PDF</a>
@@ -119,8 +127,111 @@
                     </div>
 
                     <!-- Billing Tab -->
-                    <div id="tab-billing" class="tab-content pc-hidden" style="padding: 24px;">
-                        <p class="pc-muted">Billing history integration pending.</p>
+                    <div id="tab-billing" class="tab-content pc-hidden">
+                        <div class="pc-table-wrap">
+                            <table class="pc-table" style="min-width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 16px 24px;">Invoice #</th>
+                                        <th style="padding: 16px 14px;">Date</th>
+                                        <th style="padding: 16px 14px;">Services</th>
+                                        <th style="padding: 16px 14px;">Total</th>
+                                        <th style="padding: 16px 24px; text-align: right;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in invoices %}
+                                    <tr>
+                                        <td style="padding: 16px 24px; font-weight: 700; color: #2c3e91;">#{{ invoice.id }}</td>
+                                        <td style="padding: 16px 14px; color: #596578;">{{ invoice.created_at|date:"M d, Y" }}</td>
+                                        <td style="padding: 16px 14px;">
+                                            <ul style="margin: 0; padding-left: 14px; color: #596578; font-size: 12px; list-style: disc;">
+                                                {% for item in invoice.items.all %}
+                                                <li>{{ item.service_name }} &times;{{ item.quantity }}</li>
+                                                {% empty %}
+                                                <li style="list-style: none; padding-left: 0; color: #98a1b3;">—</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </td>
+                                        <td style="padding: 16px 14px; font-weight: 700; color: #1a322c;">&#8377;{{ invoice.total_amount }}</td>
+                                        <td style="padding: 16px 24px; text-align: right;">
+                                            {% if invoice.status == 'PAID' %}
+                                                <span class="pc-chip pc-chip--confirmed" style="padding: 5px 12px;">Paid</span>
+                                            {% elif invoice.status == 'PARTIAL' %}
+                                                <span class="pc-chip" style="padding: 5px 12px; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;">Partial</span>
+                                            {% else %}
+                                                <span class="pc-chip pc-chip--danger" style="padding: 5px 12px;">Unpaid</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; color: #8e9aab; padding: 40px 20px;">No invoices found for this patient.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Lab Reports Tab -->
+                    <div id="tab-lab-reports" class="tab-content pc-hidden">
+                        <div class="pc-table-wrap">
+                            <table class="pc-table" style="min-width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 16px 24px;">Date</th>
+                                        <th style="padding: 16px 14px;">Test Name</th>
+                                        <th style="padding: 16px 14px;">Status</th>
+                                        <th style="padding: 16px 24px; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for report in lab_reports %}
+                                    <tr>
+                                        <td style="padding: 16px 24px; font-weight: 500;">{{ report.report_date|date:"M d, Y" }}</td>
+                                        <td style="padding: 16px 14px;">{{ report.test_name }}</td>
+                                        <td style="padding: 16px 14px;">
+                                            {% if report.status == 'VERIFIED' %}
+                                                <span class="pc-chip pc-chip--confirmed" style="padding: 5px 12px;">Verified</span>
+                                            {% elif report.status == 'ARCHIVED' %}
+                                                <span class="pc-chip" style="padding: 5px 12px; background: #e4eaf2; color: #596578;">Archived</span>
+                                            {% else %}
+                                                <span class="pc-chip pc-chip--scheduled" style="padding: 5px 12px;">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 16px 24px; text-align: right;">
+                                            {% if report.pdf_file %}
+                                            <a href="{{ report.pdf_file.url }}" class="pc-btn pc-btn--ghost" target="_blank" style="padding: 6px 12px; min-height: 32px; font-size: 13px;">View</a>
+                                            {% endif %}
+                                            {% if request.user.role in 'ADMIN,DOCTOR,RECEPTIONIST' %}
+                                                {% if report.status == 'PENDING' %}
+                                                    <form method="post" action="{% url 'lab_report_verify' report.pk %}" style="display:inline;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                                        <button type="submit" class="pc-btn pc-btn--primary" style="padding: 6px 12px; min-height: 32px; font-size: 13px;">Verify</button>
+                                                    </form>
+                                                {% endif %}
+                                                {% if report.status != 'ARCHIVED' %}
+                                                    {% if request.user.role in 'ADMIN,RECEPTIONIST' %}
+                                                    <form method="post" action="{% url 'lab_report_archive' report.pk %}" style="display:inline;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                                        <button type="submit" class="pc-btn pc-btn--ghost" style="padding: 6px 12px; min-height: 32px; font-size: 13px; color: #596578;">Archive</button>
+                                                    </form>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; color: #8e9aab; padding: 40px 20px;">No lab reports found for this patient.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                 </div>

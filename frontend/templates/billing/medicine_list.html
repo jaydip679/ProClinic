@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Medicine Catalog — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Medicine Catalog</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Manage default medicine names and prices used when generating invoices.</p>
+        </div>
+        <a href="{% url 'medicine_create' %}"
+           class="pc-btn pc-btn--primary"
+           style="border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+            <i data-feather="plus" style="width: 16px; height: 16px;"></i> Add Medicine
+        </a>
+    </div>
+
+    <div class="pc-grid" style="gap: var(--pc-space-6);">
+
+        {# ── Medicine table ── #}
+        <div class="pc-col-8">
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft); overflow: hidden;">
+                <div class="pc-card-head" style="padding: 16px 24px; border-bottom-color: #f0f4f8;">
+                    <strong style="color: #24323b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i data-feather="package" style="width: 15px; height: 15px; color: #2c3e91;"></i>
+                        {{ medicines|length }} medicine{{ medicines|length|pluralize }} in catalog
+                    </strong>
+                </div>
+                <div class="pc-table-wrap">
+                    <table class="pc-table" style="min-width: 100%;">
+                        <thead style="background: #f7fafc;">
+                            <tr>
+                                <th style="padding: 14px 24px;">#</th>
+                                <th style="padding: 14px 14px;">Name</th>
+                                <th style="padding: 14px 14px;">Default Price</th>
+                                <th style="padding: 14px 14px;">Description</th>
+                                <th style="padding: 14px 24px; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in medicines %}
+                            <tr style="transition: background 0.15s;" onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background='transparent'">
+                                <td style="padding: 15px 24px; color: #98a1b3; font-size: 13px;">{{ forloop.counter }}</td>
+                                <td style="padding: 15px 14px; font-weight: 700; color: #1a2e3b;">{{ med.name }}</td>
+                                <td style="padding: 15px 14px; font-weight: 600; color: #0ca789;">&#8377;{{ med.default_price }}</td>
+                                <td style="padding: 15px 14px; color: #596578; font-size: 13px;">{{ med.description|default:"—"|truncatechars:60 }}</td>
+                                <td style="padding: 15px 24px; text-align: right;">
+                                    <form method="post" action="{% url 'medicine_delete' med.pk %}"
+                                          onsubmit="return confirm('Remove {{ med.name|escapejs }} from catalog?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="pc-btn pc-btn--ghost"
+                                                style="padding: 5px 12px; min-height: 30px; font-size: 12px; color: #e23e57; border-color: #f7d4d9; border-radius: 7px;">
+                                            <i data-feather="trash-2" style="width: 13px; height: 13px;"></i> Remove
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                                    <div style="font-size: 15px; margin-bottom: 8px;">No medicines in catalog yet.</div>
+                                    <div style="font-size: 13px;">Add medicines using the form on the right to make them available when generating invoices.</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {# ── Quick add form ── #}
+        <div class="pc-col-4">
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="padding: 16px 20px; background: linear-gradient(to right, #eef1fa, #fff); border-bottom-color: #f0f4f8;">
+                    <strong style="color: #2c3e91; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <i data-feather="plus-circle" style="width: 15px; height: 15px;"></i> Add to Catalog
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 22px 20px;">
+                    <form method="post" action="{% url 'medicine_create' %}">
+                        {% csrf_token %}
+                        <div class="pc-form-row" style="margin-bottom: 18px;">
+                            <label class="pc-label" style="font-size: 12px;" for="medName">Medicine Name <span style="color: #e23e57;">*</span></label>
+                            <input type="text" id="medName" name="name" class="pc-input" required
+                                   placeholder="e.g. Paracetamol 500mg"
+                                   style="border-radius: 9px; font-size: 14px;">
+                        </div>
+                        <div class="pc-form-row" style="margin-bottom: 18px;">
+                            <label class="pc-label" style="font-size: 12px;" for="medPrice">Default Price (₹)</label>
+                            <input type="number" id="medPrice" name="default_price" class="pc-input"
+                                   placeholder="0.00" step="0.01" min="0"
+                                   style="border-radius: 9px; font-size: 14px;">
+                        </div>
+                        <div class="pc-form-row" style="margin-bottom: 22px;">
+                            <label class="pc-label" style="font-size: 12px;" for="medDesc">Description / Notes</label>
+                            <textarea id="medDesc" name="description" class="pc-textarea" rows="3"
+                                      placeholder="Optional dosage form, strength, notes…"
+                                      style="border-radius: 9px; font-size: 13px; resize: vertical;"></textarea>
+                        </div>
+                        <button type="submit" class="pc-btn pc-btn--primary" style="width: 100%; border-radius: 9px; font-size: 14px; padding: 11px;">
+                            Add to Catalog
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

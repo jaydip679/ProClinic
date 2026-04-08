@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Add Medicine — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+    <div style="margin-bottom: var(--pc-space-5);">
+        <a href="{% url 'medicine_list' %}" class="pc-btn pc-btn--ghost" style="padding: 6px; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 16px;">
+            <i data-feather="arrow-left" style="width: 15px; height: 15px;"></i> Back to Catalog
+        </a>
+        <h2 class="pc-h2" style="margin: 0;">Add Medicine to Catalog</h2>
+    </div>
+    <div class="pc-card" style="max-width: 520px; border-radius: 14px; box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2;">
+        <div class="pc-card-body" style="padding: 30px 28px;">
+            <form method="post" action="{% url 'medicine_create' %}">
+                {% csrf_token %}
+                <div class="pc-form-row" style="margin-bottom: 22px;">
+                    <label class="pc-label" for="medName">Medicine Name <span style="color: #e23e57;">*</span></label>
+                    <input type="text" id="medName" name="name" class="pc-input" required placeholder="e.g. Paracetamol 500mg">
+                </div>
+                <div class="pc-form-row" style="margin-bottom: 22px;">
+                    <label class="pc-label" for="medPrice">Default Price (₹)</label>
+                    <input type="number" id="medPrice" name="default_price" class="pc-input" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="pc-form-row" style="margin-bottom: 28px;">
+                    <label class="pc-label" for="medDesc">Description / Notes</label>
+                    <textarea id="medDesc" name="description" class="pc-textarea" rows="3" placeholder="Optional notes…"></textarea>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <a href="{% url 'medicine_list' %}" class="pc-btn pc-btn--ghost" style="flex: 1; text-align: center; border-radius: 9px;">Cancel</a>
+                    <button type="submit" class="pc-btn pc-btn--primary" style="flex: 2; border-radius: 9px;">Add to Catalog</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

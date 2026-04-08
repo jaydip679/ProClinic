@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}My Bills — ProClinic{% endblock %}
+
 {% block content %}
 <div class="pc-section">
     <div style="margin-bottom: var(--pc-space-5);">
@@ -47,14 +49,19 @@
                             {% endif %}
                         </td>
                         <td style="padding: 20px 24px; text-align: right;">
-                            {% if invoice.status != 'PAID' %}
-                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                                <a href="{% url 'invoice_pdf_download' invoice.pk %}"
+                                   class="pc-btn pc-btn--ghost"
+                                   style="padding: 6px 12px; min-height: 32px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: #2c3e91; border-color: #c7d2fe;">
+                                    <i data-feather="download" style="width: 13px; height: 13px;"></i> PDF
+                                </a>
+                                {% if invoice.status != 'PAID' %}
                                     <button class="pc-btn pc-btn--primary" style="padding: 6px 12px; min-height: 32px; font-size: 12px; cursor: default;" title="Please visit the hospital reception to pay in cash.">Pay at Hospital</button>
-                                    <button class="pc-btn pc-btn--ghost" disabled style="padding: 6px 12px; min-height: 32px; font-size: 12px; cursor: not-allowed;" title="Online payment is currently not available. Please pay at the hospital.">Pay Online</button>
-                                </div>
-                            {% else %}
-                                <span style="font-size: 13px; color: #98a1b3;">No Action Required</span>
-                            {% endif %}
+                                    <button class="pc-btn pc-btn--ghost" disabled style="padding: 6px 12px; min-height: 32px; font-size: 12px; cursor: not-allowed;" title="Online payment is currently not available.">Pay Online</button>
+                                {% else %}
+                                    <span style="font-size: 13px; color: #98a1b3;">No Action Required</span>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
