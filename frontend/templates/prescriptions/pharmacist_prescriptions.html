@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Dispense Queue — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Page header #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--pc-space-6);">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Dispense Queue</h2>
+            <p class="pc-muted" style="margin-top: 4px;">Incoming prescriptions waiting to be dispensed</p>
+        </div>
+        {% if pending_count > 0 %}
+        <div style="background: linear-gradient(135deg, #c0392b, #e74c3c); color: white; padding: 8px 18px; border-radius: 24px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(192,57,43,0.3);">
+            <i data-feather="alert-circle" style="width: 16px; height: 16px;"></i>
+            {{ pending_count }} Pending
+        </div>
+        {% endif %}
+    </div>
+
+    {# Filter Tabs #}
+    <div style="display: flex; gap: 8px; margin-bottom: var(--pc-space-4); flex-wrap: wrap; align-items: center;">
+        <a href="?status=PENDING{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+                  {% if current_filter == 'PENDING' %}background: linear-gradient(135deg, #e6a817, #c9920f); color: white; box-shadow: 0 3px 10px rgba(230,168,23,0.3);{% else %}background: #fff8e6; color: #b7780a; border: 1px solid #f0d990;{% endif %}">
+            <i data-feather="package" style="width: 14px; height: 14px;"></i>
+            Pending <span style="font-weight: 400; font-size: 12px;">({{ pending_count }})</span>
+        </a>
+        <a href="?status=DISPENSED{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+                  {% if current_filter == 'DISPENSED' %}background: linear-gradient(135deg, #0ca789, #1fa574); color: white; box-shadow: 0 3px 10px rgba(12,167,137,0.3);{% else %}background: #f0faf7; color: #0ca789; border: 1px solid #b2e5d9;{% endif %}">
+            <i data-feather="check-circle" style="width: 14px; height: 14px;"></i>
+            Dispensed <span style="font-weight: 400; font-size: 12px;">({{ dispensed_count }})</span>
+        </a>
+        <a href="?status=all{% if search_query %}&q={{ search_query }}{% endif %}"
+           style="padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+                  {% if current_filter == 'all' %}background: #2c3e91; color: white; box-shadow: 0 3px 10px rgba(44,62,145,0.25);{% else %}background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef0;{% endif %}">
+            <i data-feather="list" style="width: 14px; height: 14px;"></i>
+            All <span style="font-weight: 400; font-size: 12px;">({{ total_count }})</span>
+        </a>
+    </div>
+
+    {# Search bar #}
+    <form method="get" style="margin-bottom: var(--pc-space-5);">
+        <input type="hidden" name="status" value="{{ current_filter }}">
+        <div style="display: flex; gap: 10px; max-width: 400px;">
+            <div style="position: relative; flex: 1;">
+                <i data-feather="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #98a1b3; pointer-events: none;"></i>
+                <input type="text" name="q" value="{{ search_query }}" class="pc-input"
+                       placeholder="Search patient name…"
+                       style="padding-left: 38px; border-radius: 10px;">
+            </div>
+            <button type="submit" class="pc-btn pc-btn--ghost" style="border-radius: 10px; padding: 0 18px;">Search</button>
+            {% if search_query %}
+            <a href="?status={{ current_filter }}" class="pc-btn pc-btn--ghost"
+               style="border-radius: 10px; color: #e23e57; border-color: #f7d4d9;">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    {# Queue List #}
+    <div class="pc-card" style="box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px; overflow: hidden;">
+        {% for rx in prescriptions %}
+        <div style="border-bottom: 1px solid #f0f4f8; padding: 20px 24px; transition: background 0.15s;"
+             onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background='transparent'">
+            <div style="display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+
+                {# Patient avatar + info #}
+                <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 220px;">
+                    <a href="{% url 'pharmacist_prescription_detail' rx.pk %}"
+                       style="text-decoration: none; flex-shrink: 0;">
+                        <div class="pc-avatar" style="width: 44px; height: 44px; font-size: 16px; background: #2c3e91; color: #fff;">
+                            {{ rx.patient.first_name|first }}{{ rx.patient.last_name|first }}
+                        </div>
+                    </a>
+                    <div>
+                        <a href="{% url 'pharmacist_prescription_detail' rx.pk %}"
+                           style="font-weight: 700; color: #1a2e3b; font-size: 15px; text-decoration: none; display: block;">
+                            {{ rx.patient }}
+                        </a>
+                        <div style="font-size: 13px; color: #6f8295; margin-top: 2px;">
+                            Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}
+                        </div>
+                        <div style="font-size: 12px; color: #98a1b3; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                            <i data-feather="clock" style="width: 11px; height: 11px;"></i>
+                            {{ rx.created_at|date:"M d, Y — H:i" }}
+                            {% if rx.dispense_status == 'DISPENSED' and rx.dispensed_at %}
+                            &nbsp;·&nbsp;
+                            <i data-feather="check" style="width: 11px; height: 11px; color: #0ca789;"></i>
+                            Dispensed {{ rx.dispensed_at|date:"M d, H:i" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Medicine chips #}
+                <div style="flex: 2; min-width: 260px; padding-top: 2px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8e9aab; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                        {{ rx.items.count }} medication{{ rx.items.count|pluralize }}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        {% for item in rx.items.all %}
+                        <span style="background: #f0f4f8; border: 1px solid #dbe3ed; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #37485a;">
+                            <strong>{{ item.medicine_name }}</strong>
+                            <span style="color: #8e9aab;"> {{ item.dosage }}</span>
+                        </span>
+                        {% empty %}
+                        <span style="color: #98a1b3; font-size: 12px; font-style: italic;">No items logged.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# Status + actions (right column) #}
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; padding-top: 2px;">
+                    {# Status badge #}
+                    {% if rx.dispense_status == 'DISPENSED' %}
+                        <span class="pc-chip pc-chip--confirmed" style="padding: 5px 14px; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                            <i data-feather="check-circle" style="width: 12px; height: 12px;"></i> Dispensed
+                        </span>
+                    {% else %}
+                        <span class="pc-chip" style="padding: 5px 14px; font-size: 13px; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990; display: flex; align-items: center; gap: 5px;">
+                            <i data-feather="package" style="width: 12px; height: 12px;"></i> Pending
+                        </span>
+                    {% endif %}
+
+                    {# Action buttons #}
+                    <div style="display: flex; gap: 7px;">
+                        {% if rx.pdf_file %}
+                        <a href="{{ rx.pdf_file.url }}" target="_blank"
+                           class="pc-btn pc-btn--ghost"
+                           style="padding: 5px 11px; min-height: 30px; font-size: 12px; border-radius: 7px; display: flex; align-items: center; gap: 4px;"
+                           title="Download PDF">
+                            <i data-feather="download" style="width: 13px; height: 13px;"></i>
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'pharmacist_prescription_detail' rx.pk %}"
+                           class="pc-btn pc-btn--ghost"
+                           style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; display: flex; align-items: center; gap: 5px;">
+                            <i data-feather="eye" style="width: 13px; height: 13px;"></i> Details
+                        </a>
+
+                        {% if rx.dispense_status != 'DISPENSED' %}
+                        <form method="post" action="{% url 'dispense_prescription' rx.pk %}"
+                              onsubmit="return confirm('Mark Rx #{{ rx.pk }} for {{ rx.patient }} as dispensed?');">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="pc-btn pc-btn--primary"
+                                    style="padding: 5px 12px; min-height: 30px; font-size: 12px; border-radius: 7px; background: linear-gradient(135deg, #0ca789, #1fa574); display: flex; align-items: center; gap: 5px; box-shadow: 0 3px 8px rgba(12,167,137,0.25);">
+                                <i data-feather="check" style="width: 13px; height: 13px;"></i> Dispense
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 90px 20px; color: #8e9aab;">
+            {% if current_filter == 'PENDING' %}
+                <i data-feather="check-circle" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35; color: #0ca789;"></i>
+                <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">All clear!</div>
+                <div style="font-size: 14px;">No prescriptions are waiting to be dispensed.</div>
+            {% elif current_filter == 'DISPENSED' %}
+                <i data-feather="archive" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+                <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">Nothing dispensed yet</div>
+                <div style="font-size: 14px;">Dispensed prescriptions will appear here.</div>
+            {% else %}
+                <i data-feather="inbox" style="width: 52px; height: 52px; display: block; margin: 0 auto 16px; opacity: 0.35;"></i>
+                <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px; color: #37485a;">No prescriptions found</div>
+                <div style="font-size: 14px;">{% if search_query %}No results for "{{ search_query }}".{% else %}No prescriptions exist yet.{% endif %}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

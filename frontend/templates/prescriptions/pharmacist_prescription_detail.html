@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Rx #{{ rx.pk }} — {{ rx.patient }} — ProClinic{% endblock %}
+
+{% block content %}
+<div class="pc-section">
+
+    {# Back navigation #}
+    <div style="margin-bottom: var(--pc-space-5); display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'pharmacist_prescriptions' %}" class="pc-btn pc-btn--ghost"
+           style="padding: 6px; min-height: 34px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <i data-feather="arrow-left" style="width: 16px; height: 16px;"></i> Back to Queue
+        </a>
+        {% if pending_count > 0 %}
+        <div style="font-size: 13px; color: #b7780a; background: #fff8e6; border: 1px solid #f0d990; padding: 5px 14px; border-radius: 20px; font-weight: 600;">
+            {{ pending_count }} remaining in queue
+        </div>
+        {% endif %}
+    </div>
+
+    {# Page title + status #}
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--pc-space-6); flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 class="pc-h2" style="margin: 0;">Prescription #{{ rx.pk }}</h2>
+            <p class="pc-muted" style="margin-top: 4px;">
+                Issued {{ rx.created_at|date:"M d, Y" }} at {{ rx.created_at|date:"H:i" }}
+            </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            {% if rx.dispense_status == 'DISPENSED' %}
+                <span class="pc-chip pc-chip--confirmed" style="padding: 8px 20px; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                    <i data-feather="check-circle" style="width: 15px; height: 15px;"></i>
+                    Dispensed
+                </span>
+                {% if rx.dispensed_at %}
+                <span style="font-size: 12px; color: #6f8295;">
+                    {{ rx.dispensed_at|date:"M d, Y H:i" }}
+                </span>
+                {% endif %}
+            {% else %}
+                <span class="pc-chip" style="padding: 8px 20px; font-size: 14px; background: #fff8e6; color: #b7780a; border: 1px solid #f0d990; display: flex; align-items: center; gap: 6px;">
+                    <i data-feather="package" style="width: 15px; height: 15px;"></i>
+                    Pending Dispense
+                </span>
+            {% endif %}
+            {% if rx.pdf_file %}
+            <a href="{{ rx.pdf_file.url }}" target="_blank" class="pc-btn pc-btn--ghost"
+               style="border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                <i data-feather="download" style="width: 14px; height: 14px;"></i> Download PDF
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="pc-grid" style="gap: var(--pc-space-6);">
+
+        {# Left column: Patient + Doctor cards #}
+        <div class="pc-col-4" style="display: flex; flex-direction: column; gap: var(--pc-space-5);">
+
+            {# Patient Card #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="background: linear-gradient(to right, #eef1fa, #fff); padding: 16px 20px; border-radius: 14px 14px 0 0;">
+                    <strong style="color: #2c3e91; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="user" style="width: 14px; height: 14px;"></i> Patient
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 20px; text-align: center;">
+                    <div class="pc-avatar" style="width: 64px; height: 64px; font-size: 22px; background: #2c3e91; color: #fff; margin: 0 auto 12px;">
+                        {{ rx.patient.first_name|first }}{{ rx.patient.last_name|first }}
+                    </div>
+                    <div style="font-weight: 700; font-size: 17px; color: #1a2e3b; margin-bottom: 4px;">
+                        {{ rx.patient }}
+                    </div>
+                    <div style="font-size: 13px; color: #6f8295; margin-bottom: 16px;">
+                        {% if rx.patient.blood_group %}
+                        <span class="pc-chip pc-chip--danger" style="padding: 3px 10px; font-size: 12px;">{{ rx.patient.blood_group }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: left; border-top: 1px solid #f0f4f8; padding-top: 14px; display: grid; gap: 10px; font-size: 13px;">
+                        {% if rx.patient.contact_number %}
+                        <div style="display: flex; gap: 8px; align-items: flex-start;">
+                            <i data-feather="phone" style="width: 14px; height: 14px; color: #6f8295; flex-shrink: 0; margin-top: 1px;"></i>
+                            <span style="color: #37485a;">{{ rx.patient.contact_number }}</span>
+                        </div>
+                        {% endif %}
+                        {% if rx.patient.date_of_birth %}
+                        <div style="display: flex; gap: 8px; align-items: flex-start;">
+                            <i data-feather="calendar" style="width: 14px; height: 14px; color: #6f8295; flex-shrink: 0; margin-top: 1px;"></i>
+                            <span style="color: #37485a;">DOB: {{ rx.patient.date_of_birth }}</span>
+                        </div>
+                        {% endif %}
+                        {% if rx.patient.address %}
+                        <div style="display: flex; gap: 8px; align-items: flex-start;">
+                            <i data-feather="map-pin" style="width: 14px; height: 14px; color: #6f8295; flex-shrink: 0; margin-top: 1px;"></i>
+                            <span style="color: #37485a;">{{ rx.patient.address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# Doctor Card #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="background: linear-gradient(to right, #f2faf8, #fff); padding: 16px 20px; border-radius: 14px 14px 0 0;">
+                    <strong style="color: #0ca789; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="activity" style="width: 14px; height: 14px;"></i> Prescribing Doctor
+                    </strong>
+                </div>
+                <div class="pc-card-body" style="padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                        <div class="pc-avatar" style="width: 42px; height: 42px; font-size: 15px; background: #0ca789; color: #fff;">
+                            {{ rx.doctor.first_name|first|default:rx.doctor.username.0|upper }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #1a2e3b; font-size: 15px;">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
+                            <div style="font-size: 12px; color: #6f8295;">{{ rx.doctor.email }}</div>
+                        </div>
+                    </div>
+                    <div style="border-top: 1px solid #f0f4f8; padding-top: 12px; font-size: 13px; color: #596578;">
+                        <div>Issued on {{ rx.created_at|date:"M d, Y" }}</div>
+                        {% if rx.visit %}
+                        <div style="margin-top: 4px; color: #98a1b3;">Visit-linked prescription</div>
+                        {% endif %}
+                        {% if rx.appointment %}
+                        <div style="margin-top: 4px; color: #98a1b3;">
+                            Appointment: {{ rx.appointment.scheduled_time|date:"M d, Y H:i" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {# Right column: Medication table + Dispense action #}
+        <div class="pc-col-8" style="display: flex; flex-direction: column; gap: var(--pc-space-5);">
+
+            {# Medication table #}
+            <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft);">
+                <div class="pc-card-head" style="background: linear-gradient(to right, #fff8e6, #fff); padding: 18px 24px; border-radius: 14px 14px 0 0; border-bottom-color: #f5eccf;">
+                    <strong style="color: #1a2e3b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i data-feather="list" style="width: 16px; height: 16px; color: #e6a817;"></i>
+                        Prescribed Medications
+                        <span style="background: #e6a817; color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 600;">
+                            {{ items.count }} item{{ items.count|pluralize }}
+                        </span>
+                    </strong>
+                </div>
+                <div class="pc-table-wrap">
+                    <table class="pc-table" style="min-width: 100%;">
+                        <thead style="background: #fdfaf2;">
+                            <tr>
+                                <th style="padding: 14px 24px; width: 40%;">Medicine</th>
+                                <th style="padding: 14px 14px;">Dosage</th>
+                                <th style="padding: 14px 14px;">Instructions</th>
+                                <th style="padding: 14px 24px;">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td style="padding: 16px 24px;">
+                                    <div style="font-weight: 700; color: #1a2e3b; font-size: 14px;">{{ item.medicine_name }}</div>
+                                </td>
+                                <td style="padding: 16px 14px;">
+                                    <span style="background: #f0faf7; border: 1px solid #b2e5d9; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #0ca789; font-weight: 600;">
+                                        {{ item.dosage }}
+                                    </span>
+                                </td>
+                                <td style="padding: 16px 14px; color: #596578; font-size: 13px; max-width: 220px;">
+                                    {{ item.instructions }}
+                                </td>
+                                <td style="padding: 16px 24px; color: #37485a; font-size: 13px; font-weight: 500;">
+                                    {{ item.duration }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px 20px; color: #8e9aab;">
+                                    No medication items recorded for this prescription.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Dispense Action Card #}
+            {% if rx.dispense_status != 'DISPENSED' %}
+            <div class="pc-card" style="border-radius: 14px; border-color: #b2e5d9; background: linear-gradient(135deg, #f0faf7, #fff); box-shadow: 0 4px 20px rgba(12,167,137,0.08);">
+                <div class="pc-card-body" style="padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="background: #0ca789; color: white; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(12,167,137,0.3);">
+                            <i data-feather="package" style="width: 22px; height: 22px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #1a322c; font-size: 15px;">Ready to dispense?</div>
+                            <div style="font-size: 13px; color: #4b5f74; margin-top: 2px;">
+                                Confirm that all {{ items.count }} medication{{ items.count|pluralize }} have been prepared and handed to the patient.
+                            </div>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'dispense_prescription' rx.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'pharmacist_prescription_detail' rx.pk %}">
+                        <button type="submit"
+                                class="pc-btn pc-btn--primary"
+                                style="padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #0ca789, #1fa574); box-shadow: 0 4px 14px rgba(12,167,137,0.3); display: flex; align-items: center; gap: 8px;"
+                                onclick="return confirm('Confirm dispense of Rx #{{ rx.pk }} for {{ rx.patient }}?');">
+                            <i data-feather="check-circle" style="width: 17px; height: 17px;"></i>
+                            Confirm Dispense
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="pc-card" style="border-radius: 14px; border-color: #b2e5d9; background: linear-gradient(135deg, #f0faf7, #f7fefc);">
+                <div class="pc-card-body" style="padding: 20px 24px; display: flex; align-items: center; gap: 14px;">
+                    <div style="background: #0ca789; color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i data-feather="check-circle" style="width: 20px; height: 20px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #1a322c; font-size: 14px;">Dispensed successfully</div>
+                        <div style="font-size: 13px; color: #4b5f74; margin-top: 2px;">
+                            This prescription was dispensed on {{ rx.dispensed_at|date:"M d, Y" }} at {{ rx.dispensed_at|date:"H:i" }}.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
