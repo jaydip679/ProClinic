@@ -54,6 +54,7 @@ class DoctorUnavailability(models.Model):
 class Appointment(models.Model):
     STATUS_CHOICES = [
         ('SCHEDULED',   'Scheduled'),
+        ('CHECKED_IN',  'Checked In'),
         ('COMPLETED',   'Completed'),
         ('CANCELLED',   'Cancelled'),
         ('NOSHOW',      'No Show'),
@@ -64,6 +65,7 @@ class Appointment(models.Model):
     doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='doctor_appointments')
     scheduled_time = models.DateTimeField()
     reason = models.TextField(blank=True)
+    room_assignment = models.CharField(max_length=50, blank=True, null=True, help_text="Room assigned during check-in")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SCHEDULED', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -99,19 +101,34 @@ class Appointment(models.Model):
                 timezone.get_current_timezone(),
             )
 
-        # Keep appointment creation in the future.
-        if self.scheduled_time and self.scheduled_time <= timezone.now():
-            errors['scheduled_time'] = "Scheduled time must be in the future."
+        is_active_booking = self.status in ['SCHEDULED', 'RESCHEDULED', 'CHECKED_IN']
 
-        # Doctor user must be a doctor account.
-        if self.doctor_id:
+        orig = None
+        if self.pk:
+            orig = Appointment.objects.filter(pk=self.pk).first()
+
+        time_changed = True
+        doctor_changed = True
+        patient_changed = True
+        if orig:
+            time_changed = (orig.scheduled_time != self.scheduled_time)
+            doctor_changed = (orig.doctor_id != self.doctor_id)
+            patient_changed = (orig.patient_id != self.patient_id)
+
+        # Keep appointment creation in the future, but only if creating or changing time
+        if is_active_booking and (not self.pk or time_changed):
+            if self.scheduled_time and self.scheduled_time <= timezone.now():
+                errors['scheduled_time'] = "Scheduled time must be in the future."
+
+        # Doctor user must be a doctor account. Validate only if creating or changing doctor.
+        if self.doctor_id and (not self.pk or doctor_changed):
             User = get_user_model()
             doctor_obj = User.objects.filter(pk=self.doctor_id).only('role').first()
             if not doctor_obj or doctor_obj.role != 'DOCTOR':
                 errors['doctor'] = "Please select a valid doctor."
 
         # Doctor cannot be booked during blocked availability periods.
-        if self.doctor_id and self.scheduled_time:
+        if is_active_booking and self.doctor_id and self.scheduled_time and (not self.pk or time_changed or doctor_changed):
             if not getattr(self, 'override_conflict', False):
                 has_block = DoctorUnavailability.objects.filter(
                     doctor_id=self.doctor_id,
@@ -122,23 +139,23 @@ class Appointment(models.Model):
                     errors['scheduled_time'] = "Doctor is unavailable at this selected time."
 
         # Check for double-booking for the same doctor at the same time.
-        if self.doctor_id and self.scheduled_time:
+        if is_active_booking and self.doctor_id and self.scheduled_time:
             if not getattr(self, 'override_conflict', False):
                 overlapping_appointments = Appointment.objects.filter(
                     doctor_id=self.doctor_id,
                     scheduled_time=self.scheduled_time,
-                    status='SCHEDULED'
+                    status__in=['SCHEDULED', 'RESCHEDULED']
                 ).exclude(pk=self.pk)  # Exclude the current appointment if updating.
 
                 if overlapping_appointments.exists():
                     errors['doctor'] = "This doctor already has an appointment at that time."
 
         # Patient cannot hold two active appointments at the same time.
-        if self.patient_id and self.scheduled_time:
+        if is_active_booking and self.patient_id and self.scheduled_time:
             patient_conflicts = Appointment.objects.filter(
                 patient_id=self.patient_id,
                 scheduled_time=self.scheduled_time,
-                status='SCHEDULED'
+                status__in=['SCHEDULED', 'RESCHEDULED']
             ).exclude(pk=self.pk)
             if patient_conflicts.exists():
                 errors['scheduled_time'] = "You already have an appointment booked at this time."
@@ -175,7 +192,7 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         """Return True if this appointment can still be cancelled."""
-        return self.status == 'SCHEDULED'
+        return self.status in ('SCHEDULED', 'RESCHEDULED', 'CHECKED_IN')
 
     def __str__(self):
         return f"{self.patient} with Dr. {self.doctor.last_name} on {self.scheduled_time}"

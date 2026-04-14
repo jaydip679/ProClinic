@@ -7,13 +7,14 @@ from django.db.models import Q
 from django.shortcuts import redirect, render
 
 from .forms import (
-    DoctorProfileForm,
+    StaffProfileForm,
     PatientPasswordChangeForm,
     PatientProfileForm,
     PatientSignUpForm,
     StaffCreationForm,
 )
 from patients.models import Patient
+from audit.models import AuditLog
 
 
 STAFF_ROLES = {'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'}
@@ -38,7 +39,17 @@ class RoleBasedLoginView(LoginView):
                 f"This account is not authorized for the {self.portal_label} portal.",
             )
             return self.form_invalid(form)
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        
+        AuditLog.objects.create(
+            actor=user,
+            action_type='LOGIN',
+            entity_type='CustomUser',
+            entity_id=user.pk,
+            changes={'ip': self.request.META.get('REMOTE_ADDR', 'unknown')},
+        )
+        
+        return response
 
 
 class StaffLoginView(RoleBasedLoginView):
@@ -178,17 +189,17 @@ def patient_profile(request):
 
 
 @login_required
-def doctor_profile(request):
-    if request.user.role != 'DOCTOR':
+def staff_profile(request):
+    if request.user.role in {'PATIENT'}:
         return redirect('dashboard')
 
     if request.method == 'POST':
-        form = DoctorProfileForm(request.POST, instance=request.user)
+        form = StaffProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully.")
-            return redirect('doctor_profile')
+            return redirect('staff_profile')
     else:
-        form = DoctorProfileForm(instance=request.user)
+        form = StaffProfileForm(instance=request.user)
 
-    return render(request, 'accounts/doctor_profile.html', {'form': form})
+    return render(request, 'accounts/staff_profile.html', {'form': form})

@@ -1,9 +1,11 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.db.models import Q, Sum
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.conf import settings
 from accounts.models import CustomUser
 from audit.models import AuditLog
 from billing.models import Invoice
@@ -85,43 +87,62 @@ def dashboard(request):
     elif user.role == 'RECEPTIONIST':
         context.update({
             'today_bookings': Appointment.objects.filter(
-                created_by=user,
-                created_at__date=today,
-            ).count(),
-            'total_today_slots': Appointment.objects.filter(scheduled_time__date=today).count(),
-            'new_patient_registrations': Patient.objects.filter(created_at__gte=week_ago).count(),
-            'walk_in_followups': Appointment.objects.filter(
-                status='SCHEDULED',
                 scheduled_time__date=today,
-            ).select_related('patient', 'doctor').order_by('scheduled_time')[:10],
-            'reschedule_queue': Appointment.objects.filter(
-                status__in=['CANCELLED', 'NOSHOW']
-            ).select_related('patient', 'doctor').order_by('-created_at')[:8],
+            ).count(),
+            'total_today_slots': Appointment.objects.filter(
+                status__in=['SCHEDULED', 'RESCHEDULED'],
+                scheduled_time__date=today,
+            ).count(),
+            'new_patient_registrations': Patient.objects.filter(created_at__gte=week_ago).count(),
+            'pending_reschedules': Appointment.objects.filter(status='RESCHEDULED').count(),
+            'walk_in_followups': Appointment.objects.filter(
+                status__in=['SCHEDULED', 'RESCHEDULED'],
+                scheduled_time__date=today,
+            ).select_related('patient', 'doctor').order_by('scheduled_time')[:12],
         })
+
 
     elif user.role == 'ACCOUNTANT':
-        paid_total = Invoice.objects.filter(status='PAID').aggregate(total=Sum('total_amount'))['total'] or 0
-        pending_total = Invoice.objects.filter(status__in=['UNPAID', 'PARTIAL']).aggregate(total=Sum('total_amount'))['total'] or 0
+        paid_total    = Invoice.objects.filter(status='PAID').aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        pending_total = Invoice.objects.filter(status__in=['UNPAID', 'PARTIAL']).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        draft_invoices = Invoice.objects.filter(status='DRAFT').select_related('patient', 'appointment').order_by('-created_at')
+        draft_count    = draft_invoices.count()
         context.update({
-            'paid_total': paid_total,
+            'paid_total':    paid_total,
             'pending_total': pending_total,
-            'gst_estimate': paid_total * 0.18,
+            'gst_estimate':  (paid_total * Decimal(str(settings.GST_RATE))).quantize(Decimal('0.01')),
             'unpaid_invoices': Invoice.objects.filter(status='UNPAID').count(),
+            'counts': {
+                'PAID':    Invoice.objects.filter(status='PAID').count(),
+                'PARTIAL': Invoice.objects.filter(status='PARTIAL').count(),
+                'UNPAID':  Invoice.objects.filter(status='UNPAID').count(),
+            },
             'recent_invoices': Invoice.objects.select_related('patient').order_by('-updated_at')[:10],
+            'draft_invoices': draft_invoices[:8],
+            'draft_count':   draft_count,
         })
 
+
     elif user.role == 'PHARMACIST':
+        pending_qs = Prescription.objects.filter(dispense_status='PENDING')
         context.update({
             'today_prescriptions': Prescription.objects.filter(created_at__date=today).count(),
-            'total_medicine_lines': PrescriptionItem.objects.count(),
-            'dispense_queue': Prescription.objects.select_related('patient', 'doctor').order_by('-created_at')[:10],
+            'total_medicine_lines': PrescriptionItem.objects.filter(
+                prescription__created_at__date=today
+            ).count(),
+            'dispense_queue': pending_qs.select_related('patient', 'doctor').prefetch_related('items').order_by('-created_at')[:10],
+            'pending_count': pending_qs.count(),
+            'dispensed_today': Prescription.objects.filter(
+                dispense_status='DISPENSED',
+                dispensed_at__date=today,
+            ).count(),
             'recent_prescriptions': Prescription.objects.select_related('patient', 'doctor').order_by('-created_at')[:8],
         })
 
+
     elif user.role == 'PATIENT':
-        patient_profile = Patient.objects.filter(
-            Q(email=user.email) | Q(contact_number=user.phone_number) | Q(contact_number=user.username)
-        ).first()
+        from patients.utils import get_patient_profile
+        patient_profile = get_patient_profile(user)
 
         my_history = Appointment.objects.none()
         my_past_history = Appointment.objects.none()
@@ -145,7 +166,6 @@ def dashboard(request):
             'my_prescriptions': my_prescriptions[:10],
             'my_total_visits': my_history.count(),
             'my_invoice_due': my_invoices.filter(status__in=['UNPAID', 'PARTIAL']).aggregate(total=Sum('total_amount'))['total'] or 0,
-            'helpdesk_message': "Ask anything about appointment booking, prescriptions, and billing in the AI Help Desk.",
         })
 
     return render(request, 'dashboard.html', context)

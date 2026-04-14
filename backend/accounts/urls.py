@@ -6,7 +6,7 @@ from .views import (
     StaffLoginView,
     choose_login,
     create_staff_account,
-    doctor_profile,
+    staff_profile,
     patient_profile,
     patient_signup,
 )
@@ -18,7 +18,7 @@ urlpatterns = [
     path('login/patient/', PatientLoginView.as_view(), name='patient_login'),
     path('signup/patient/', patient_signup, name='patient_signup'),
     path('profile/patient/', patient_profile, name='patient_profile'),
-    path('profile/doctor/', doctor_profile, name='doctor_profile'),
+    path('profile/staff/', staff_profile, name='staff_profile'),
     path('staff/create/', create_staff_account, name='create_staff_account'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]

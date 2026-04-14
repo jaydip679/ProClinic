@@ -13,6 +13,7 @@ class CustomUser(AbstractUser):
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='PATIENT')
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    specialization = models.CharField(max_length=100, blank=True, null=True, help_text="For doctors (e.g., Cardiology, General Practice)")
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

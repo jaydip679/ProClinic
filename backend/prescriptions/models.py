@@ -45,6 +45,22 @@ class Prescription(models.Model):
     # PDF export
     pdf_file = models.FileField(upload_to='prescriptions/pdfs/', blank=True, null=True)
 
+    # Pharmacist dispense tracking
+    DISPENSE_PENDING = 'PENDING'
+    DISPENSE_DISPENSED = 'DISPENSED'
+    DISPENSE_STATUS_CHOICES = [
+        (DISPENSE_PENDING, 'Pending Dispense'),
+        (DISPENSE_DISPENSED, 'Dispensed'),
+    ]
+    dispense_status = models.CharField(
+        max_length=20,
+        choices=DISPENSE_STATUS_CHOICES,
+        default=DISPENSE_PENDING,
+        db_index=True,
+        help_text='Tracks whether the pharmacist has dispensed medicines.',
+    )
+    dispensed_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

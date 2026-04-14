@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'django_filters',
+    'corsheaders',
 
     # Project apps
     'api',
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -101,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # 10. Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
@@ -162,3 +164,14 @@ SIMPLE_JWT = {
 LOGIN_URL = '/accounts/choose-login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/choose-login/'
+
+# 16. Financial / Clinic Configs
+CONSULTATION_FEE = env('CONSULTATION_FEE', default='500.00')
+GST_RATE = env('GST_RATE', default='0.18')
+
+# 17. CORS Config
+CORS_ALLOW_ALL_ORIGINS = True
+
+# 18. Deployment
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+

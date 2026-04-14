@@ -46,11 +46,14 @@ class StaffCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ('username', 'first_name', 'last_name', 'email', 'phone_number', 'role')
+        fields = ('username', 'first_name', 'last_name', 'email', 'phone_number', 'role', 'specialization')
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.is_staff = True
+        # Only ADMIN role receives Django admin access.
+        # All other staff roles (DOCTOR, RECEPTIONIST, PHARMACIST, ACCOUNTANT)
+        # do not need is_staff and should not have access to the Django admin panel.
+        user.is_staff = (user.role == 'ADMIN')
         if commit:
             user.save()
         return user
@@ -81,7 +84,7 @@ class PatientPasswordChangeForm(PasswordChangeForm):
     pass
 
 
-class DoctorProfileForm(forms.ModelForm):
+class StaffProfileForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'phone_number']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'specialization']

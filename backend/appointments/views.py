@@ -7,20 +7,18 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django import forms as django_forms
 
+from audit.utils import log_action
 from prescriptions.forms import MedicineFormSet
-from .forms import AppointmentForm, DoctorUnavailabilityForm
+from .forms import AppointmentForm, DoctorUnavailabilityForm, VisitNoteForm
 from .models import Appointment, DoctorUnavailability
 from patients.models import Patient, Visit
+from core.utils import send_appointment_notification
 
 
 BOOKING_ALLOWED_ROLES = {'ADMIN', 'RECEPTIONIST', 'PATIENT'}
 
 
-def _patient_profile_for_user(user):
-    return Patient.objects.filter(
-        Q(email=user.email) | Q(contact_number=user.phone_number) | Q(contact_number=user.username)
-    ).first()
-
+from patients.utils import get_patient_profile
 
 @login_required
 def book_appointment(request):
@@ -32,7 +30,7 @@ def book_appointment(request):
 
     patient_profile = None
     if request.user.role == 'PATIENT':
-        patient_profile = _patient_profile_for_user(request.user)
+        patient_profile = get_patient_profile(request.user)
 
     form = AppointmentForm(
         request.POST or None,
@@ -51,6 +49,7 @@ def book_appointment(request):
                 appointment.patient = patient_profile
             appointment.created_by = request.user
             appointment.save()
+            send_appointment_notification(appointment, 'created')
             messages.success(request, "Appointment booked successfully.")
             if request.user.role == 'PATIENT':
                 return redirect('dashboard')
@@ -106,16 +105,6 @@ def doctor_appointment_detail(request, appointment_id):
     if visit:
         prescription = visit.prescriptions.select_related('doctor').prefetch_related('items').first()
 
-    # Inline form for Visit notes/diagnosis
-    class VisitNoteForm(django_forms.Form):
-        notes = django_forms.CharField(
-            widget=django_forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Clinical notes...'}),
-            required=False,
-        )
-        diagnosis = django_forms.CharField(
-            widget=django_forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Diagnosis...'}),
-            required=False,
-        )
 
     if request.method == 'POST':
         if prescription:
@@ -224,11 +213,19 @@ from accounts.models import CustomUser
 def get_available_slots(request):
     doctor_id = request.GET.get('doctor_id')
     date_str = request.GET.get('date')
+    patient_id = request.GET.get('patient_id')
+    
     if not doctor_id or not date_str:
         return JsonResponse({'slots': []})
     
     try:
         query_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Explicit Boundary Check
+        now_local = timezone.localtime(timezone.now())
+        if query_date < now_local.date():
+            return JsonResponse({'slots': [], 'error': 'Selected date is in the past. Clean your calendar fields.'})
+            
         doctor = CustomUser.objects.get(pk=doctor_id, role='DOCTOR')
     except (ValueError, CustomUser.DoesNotExist):
         return JsonResponse({'slots': []})
@@ -248,19 +245,26 @@ def get_available_slots(request):
     
     busy_dr = Appointment.objects.filter(
         doctor=doctor,
-        status='SCHEDULED',
+        status__in=['SCHEDULED', 'RESCHEDULED'],
         scheduled_time__gte=start_time,
         scheduled_time__lt=end_time
     ).values_list('scheduled_time', flat=True)
     
-    # Filter patient unavailabilities if patient portal
+    # Filter patient unavailabilities
     patient_busy_slots = []
-    if request.user.is_authenticated and request.user.role == 'PATIENT':
-        patient_profile = _patient_profile_for_user(request.user)
+    if patient_id and patient_id.isdigit():
+        patient_busy_slots = Appointment.objects.filter(
+            patient_id=patient_id,
+            status__in=['SCHEDULED', 'RESCHEDULED'],
+            scheduled_time__gte=start_time,
+            scheduled_time__lt=end_time
+        ).values_list('scheduled_time', flat=True)
+    elif request.user.is_authenticated and request.user.role == 'PATIENT':
+        patient_profile = get_patient_profile(request.user)
         if patient_profile:
             patient_busy_slots = Appointment.objects.filter(
                 patient=patient_profile,
-                status='SCHEDULED',
+                status__in=['SCHEDULED', 'RESCHEDULED'],
                 scheduled_time__gte=start_time,
                 scheduled_time__lt=end_time
             ).values_list('scheduled_time', flat=True)
@@ -279,30 +283,246 @@ def get_available_slots(request):
         if slot < now:
             continue
             
+        if slot in busy_dr or slot in patient_busy_slots:
+            continue
+        
         is_conflict = False
-        conflict_details = ""
-        
-        if slot in busy_dr:
-            is_conflict = True
-            conflict_details = "Doctor already has an appointment scheduled."
-        elif slot in patient_busy_slots:
-            is_conflict = True
-            conflict_details = "You already have an appointment scheduled at this exact time."
-        
+        slot_end = slot + datetime.timedelta(minutes=30)
+        for b in blocks:
+            # Overlap condition
+            if max(slot, b.start_time) < min(slot_end, b.end_time):
+                is_conflict = True
+                break
+                
         if not is_conflict:
-            slot_end = slot + datetime.timedelta(minutes=30)
-            for b in blocks:
-                # Overlap condition
-                if max(slot, b.start_time) < min(slot_end, b.end_time):
-                    is_conflict = True
-                    conflict_details = b.reason or "Doctor is unavailable during this time."
-                    break
-        
-        available.append({
-            'iso': slot.isoformat(),
-            'label': timezone.localtime(slot).strftime('%I:%M %p'),
-            'is_conflict': is_conflict,
-            'conflict_details': conflict_details,
-        })
+            local_slot = timezone.localtime(slot)
+            available.append({
+                'iso': local_slot.strftime('%Y-%m-%dT%H:%M'),
+                'label': local_slot.strftime('%I:%M %p')
+            })
             
     return JsonResponse({'slots': available})
+
+
+# ─── Receptionist Appointment Management ─────────────────────────────────────
+
+RECEPTIONIST_ROLES = {'ADMIN', 'RECEPTIONIST'}
+
+
+@login_required
+def receptionist_appointments(request):
+    """Full appointment management view for Receptionist and Admin."""
+    if request.user.role not in RECEPTIONIST_ROLES:
+        return redirect('dashboard')
+
+    status_filter = request.GET.get('status', '')
+    date_filter = request.GET.get('date', '')
+    search_query = request.GET.get('q', '').strip()
+
+    qs = Appointment.objects.select_related(
+        'patient', 'doctor', 'created_by'
+    ).order_by('-scheduled_time')
+
+    if status_filter in ('SCHEDULED', 'COMPLETED', 'CANCELLED', 'NOSHOW', 'RESCHEDULED'):
+        qs = qs.filter(status=status_filter)
+
+    if date_filter:
+        try:
+            import datetime
+            filter_date = datetime.datetime.strptime(date_filter, '%Y-%m-%d').date()
+            qs = qs.filter(scheduled_time__date=filter_date)
+        except ValueError:
+            pass
+
+    if search_query:
+        qs = qs.filter(
+            Q(patient__first_name__icontains=search_query) |
+            Q(patient__last_name__icontains=search_query) |
+            Q(doctor__first_name__icontains=search_query) |
+            Q(doctor__last_name__icontains=search_query)
+        )
+
+    counts = {
+        'all':         Appointment.objects.count(),
+        'SCHEDULED':   Appointment.objects.filter(status='SCHEDULED').count(),
+        'COMPLETED':   Appointment.objects.filter(status='COMPLETED').count(),
+        'CANCELLED':   Appointment.objects.filter(status='CANCELLED').count(),
+        'NOSHOW':      Appointment.objects.filter(status='NOSHOW').count(),
+        'RESCHEDULED': Appointment.objects.filter(status='RESCHEDULED').count(),
+    }
+
+    return render(request, 'appointments/receptionist_appointments.html', {
+        'appointments': qs,
+        'current_status': status_filter,
+        'date_filter': date_filter,
+        'search_query': search_query,
+        'counts': counts,
+    })
+
+
+@require_POST
+@login_required
+def receptionist_cancel_appointment(request, pk):
+    """POST – cancel any appointment. Receptionist / Admin only."""
+    if request.user.role not in RECEPTIONIST_ROLES:
+        return redirect('dashboard')
+
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    if not appointment.is_cancellable:
+        messages.error(
+            request,
+            f"Appointment #{pk} cannot be cancelled (status: {appointment.get_status_display()})."
+        )
+        return redirect('receptionist_appointments')
+
+    reason = request.POST.get('reason', '').strip()
+    appointment.cancel(user=request.user, reason=reason)
+    send_appointment_notification(appointment, 'cancelled')
+
+    log_action(
+        actor=request.user,
+        action_type='UPDATE',
+        entity_type='Appointment',
+        entity_id=pk,
+        changes={'action': 'cancel', 'patient': str(appointment.patient), 'reason': reason or '(none)'},
+    )
+    messages.success(
+        request,
+        f"Appointment #{pk} for {appointment.patient} successfully cancelled."
+    )
+    return redirect('receptionist_appointments')
+
+
+@require_POST
+@login_required
+def receptionist_reschedule_appointment(request, pk):
+    """POST – reschedule any appointment to a new datetime. Receptionist / Admin only."""
+    if request.user.role not in RECEPTIONIST_ROLES:
+        return redirect('dashboard')
+
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    BLOCKED_STATUSES = {'CANCELLED', 'COMPLETED', 'NOSHOW'}
+    if appointment.status in BLOCKED_STATUSES:
+        messages.error(
+            request,
+            f"Cannot reschedule a {appointment.get_status_display()} appointment."
+        )
+        return redirect('receptionist_appointments')
+
+    new_time_str = request.POST.get('new_time', '').strip()
+    if not new_time_str:
+        messages.error(request, "Please provide a new date and time.")
+        return redirect('receptionist_appointments')
+
+    try:
+        from django.utils.dateparse import parse_datetime
+        new_time = parse_datetime(new_time_str)
+        if new_time is None:
+            raise ValueError("unparseable")
+        if timezone.is_naive(new_time):
+            new_time = timezone.make_aware(new_time, timezone.get_current_timezone())
+    except (ValueError, TypeError):
+        messages.error(request, "Invalid date/time format. Please use the date picker.")
+        return redirect('receptionist_appointments')
+
+    if new_time <= timezone.now():
+        messages.error(request, "New appointment time must be in the future.")
+        return redirect('receptionist_appointments')
+
+    old_time = appointment.scheduled_time
+    appointment.override_conflict = True   # staff can override slot conflicts
+    appointment.reschedule(new_time)
+    send_appointment_notification(appointment, 'rescheduled')
+
+    log_action(
+        actor=request.user,
+        action_type='UPDATE',
+        entity_type='Appointment',
+        entity_id=pk,
+        changes={
+            'action': 'reschedule',
+            'patient': str(appointment.patient),
+            'old_time': old_time.isoformat(),
+            'new_time': new_time.isoformat(),
+        },
+    )
+    messages.success(
+        request,
+        f"Appointment #{pk} rescheduled from {timezone.localtime(old_time):%b %d, %H:%M} "
+        f"to {timezone.localtime(new_time):%b %d, %H:%M}."
+    )
+    return redirect('receptionist_appointments')
+
+
+@require_POST
+@login_required
+def receptionist_mark_noshow(request, pk):
+    """POST – mark an appointment as NOSHOW. Receptionist / Admin only."""
+    if request.user.role not in RECEPTIONIST_ROLES:
+        return redirect('dashboard')
+
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    if appointment.status != 'SCHEDULED':
+        messages.error(
+            request,
+            f"Only scheduled appointments can be marked as No Show "
+            f"(current status: {appointment.get_status_display()})."
+        )
+        return redirect('receptionist_appointments')
+
+    appointment.status = 'NOSHOW'
+    appointment.save(update_fields=['status'])
+
+    log_action(
+        actor=request.user,
+        action_type='UPDATE',
+        entity_type='Appointment',
+        entity_id=pk,
+        changes={'action': 'mark_noshow', 'patient': str(appointment.patient)},
+    )
+    messages.success(
+        request,
+        f"Appointment #{pk} for {appointment.patient} marked as No Show."
+    )
+    return redirect('receptionist_appointments')
+
+@require_POST
+@login_required
+def receptionist_checkin_appointment(request, pk):
+    """POST – mark an appointment as CHECKED_IN. Receptionist / Admin only."""
+    if request.user.role not in RECEPTIONIST_ROLES:
+        return redirect('dashboard')
+
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    if appointment.status not in ('SCHEDULED', 'RESCHEDULED'):
+        messages.error(
+            request,
+            f"Only scheduled appointments can be checked in "
+            f"(current status: {appointment.get_status_display()})."
+        )
+        return redirect('receptionist_appointments')
+
+    room = request.POST.get('room_assignment', '').strip()
+    
+    appointment.status = 'CHECKED_IN'
+    if room:
+        appointment.room_assignment = room
+        appointment.save(update_fields=['status', 'room_assignment'])
+        msg = f"Patient {appointment.patient} checked in to {room} for Appointment #{pk}."
+    else:
+        appointment.save(update_fields=['status'])
+        msg = f"Patient {appointment.patient} checked in for Appointment #{pk}."
+
+    log_action(
+        actor=request.user,
+        action_type='UPDATE',
+        entity_type='Appointment',
+        entity_id=pk,
+        changes={'action': 'checkin', 'room': room, 'patient': str(appointment.patient)},
+    )
+    messages.success(request, msg)
+    return redirect('receptionist_appointments')

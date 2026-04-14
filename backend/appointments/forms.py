@@ -73,6 +73,10 @@ class AppointmentForm(forms.ModelForm):
             self.instance.override_conflict = True
 
         if scheduled_time:
+            # 0. Enforce interval
+            if scheduled_time.minute not in (0, 30) or scheduled_time.second != 0:
+                self.add_error('scheduled_time', 'Appointments must be booked in strict 30-minute intervals.')
+
             # 1. Prevent past bookings
             if scheduled_time < timezone.now():
                 self.add_error('scheduled_time', 'You cannot book appointments in the past.')
@@ -146,3 +150,13 @@ class DoctorUnavailabilityForm(forms.ModelForm):
                 attrs={'class': 'form-control', 'placeholder': 'Leave, surgery, emergency, etc.'}
             ),
         }
+
+class VisitNoteForm(forms.Form):
+    notes = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Clinical notes...'}),
+        required=False,
+    )
+    diagnosis = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Diagnosis...'}),
+        required=False,
+    )
