@@ -62,15 +62,20 @@ def public_detail(request, pk):
 
 @login_required
 def submit_paper(request):
-    """Upload a new research paper (status → PENDING on submit)."""
+    """Upload a new research paper (status → DRAFT or PENDING). DOCTOR only."""
+    if request.user.role != 'DOCTOR':
+        return redirect('dashboard')
     if request.method == 'POST':
         form = PublicationForm(request.POST, request.FILES)
         if form.is_valid():
-            paper = form.save(commit=False)
-            paper.doctor = request.user
-            paper.status = Publication.STATUS_PENDING
-            paper.save()
-            messages.success(request, 'Paper submitted for review. You will be notified of the decision.')
+            publication = form.save(commit=False)
+            publication.doctor = request.user
+            if request.POST.get('action') == 'draft':
+                publication.status = Publication.STATUS_DRAFT
+            else:
+                publication.status = Publication.STATUS_PENDING
+            publication.save()
+            messages.success(request, "Publication saved as draft." if publication.status == 'DRAFT' else "Publication submitted for review.")
             return redirect('doctor_my_papers')
     else:
         form = PublicationForm()
@@ -79,13 +84,17 @@ def submit_paper(request):
 
 @login_required
 def doctor_dashboard(request):
-    """Doctor's own paper list with statuses."""
+    """Doctor's own paper list and drafts. DOCTOR only."""
+    if request.user.role != 'DOCTOR':
+        return redirect('dashboard')
     papers = (
         Publication.objects
         .filter(doctor=request.user)
+        .exclude(status='DRAFT')
         .order_by('-created_at')
     )
-    return render(request, 'publications/doctor_dashboard.html', {'papers': papers})
+    drafts = Publication.objects.filter(status='DRAFT', doctor=request.user).order_by('-created_at')
+    return render(request, 'publications/doctor_dashboard.html', {'papers': papers, 'drafts': drafts})
 
 
 # ──────────────────────────────────────────────────────────────────────────────

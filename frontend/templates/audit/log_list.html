@@ -2,50 +2,170 @@
 
 {% block content %}
 <div class="pc-section">
-    <div style="margin-bottom: var(--pc-space-5);">
-        <h2 class="pc-h2" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i data-feather="activity" style="color: var(--pc-primary);"></i> System Audit Logs
-        </h2>
-        <p class="pc-muted" style="margin-top: 4px;">Review system-wide data events and user actions.</p>
+
+    {# ── Page header ─────────────────────────────────────────────────────────── #}
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: var(--pc-space-5); flex-wrap: wrap;">
+        <div>
+            <h2 class="pc-h2" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-feather="activity" style="color: var(--pc-primary);"></i> System Audit Logs
+            </h2>
+            <p class="pc-muted" style="margin-top: 4px;">
+                Review system-wide data events and user actions.
+                {% if page_obj.paginator.count %}
+                <span style="font-weight: 600; color: #37485a;">{{ page_obj.paginator.count }}</span> total entries.
+                {% endif %}
+            </p>
+        </div>
     </div>
-    
-    <div class="pc-card">
+
+    {# ── Filter form ──────────────────────────────────────────────────────────── #}
+    <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; margin-bottom: var(--pc-space-5);">
+        <div class="pc-card-body" style="padding: 18px 24px;">
+            <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+
+                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 160px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #596578; text-transform: uppercase; letter-spacing: 0.5px;">Action Type</label>
+                    <select name="action_type" class="pc-input" style="border-radius: 8px; font-size: 13px; padding: 8px 12px;">
+                        <option value="">All Actions</option>
+                        {% for choice in action_choices %}
+                        <option value="{{ choice }}" {% if choice == current_action_type %}selected{% endif %}>{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 180px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #596578; text-transform: uppercase; letter-spacing: 0.5px;">Entity / Model</label>
+                    <select name="entity_type" class="pc-input" style="border-radius: 8px; font-size: 13px; padding: 8px 12px;">
+                        <option value="">All Entities</option>
+                        {% for choice in entity_choices %}
+                        <option value="{{ choice }}" {% if choice == current_entity_type %}selected{% endif %}>{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 150px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #596578; text-transform: uppercase; letter-spacing: 0.5px;">Date From</label>
+                    <input type="date" name="date_from" value="{{ current_date_from }}"
+                           class="pc-input" style="border-radius: 8px; font-size: 13px; padding: 8px 12px;">
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 150px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #596578; text-transform: uppercase; letter-spacing: 0.5px;">Date To</label>
+                    <input type="date" name="date_to" value="{{ current_date_to }}"
+                           class="pc-input" style="border-radius: 8px; font-size: 13px; padding: 8px 12px;">
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: flex-end;">
+                    <button type="submit" class="pc-btn pc-btn--primary" style="border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i data-feather="filter" style="width: 14px; height: 14px;"></i> Apply
+                    </button>
+                    <a href="{% url 'audit_log_list' %}" class="pc-btn pc-btn--ghost" style="border-radius: 8px; color: #e23e57; border-color: #f7d4d9;">
+                        Clear
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    {# ── Log table ────────────────────────────────────────────────────────────── #}
+    <div class="pc-card" style="border-radius: 14px; border-color: #e4eaf2; box-shadow: var(--pc-shadow-soft); overflow: hidden;">
         <div class="pc-table-wrap">
             <table class="pc-table" style="min-width: 100%;">
-                <thead>
+                <thead style="background: #f7fafc;">
                     <tr>
-                        <th style="padding: 12px 16px;">Timestamp</th>
-                        <th style="padding: 12px 16px;">Actor</th>
-                        <th style="padding: 12px 16px;">Action</th>
-                        <th style="padding: 12px 16px;">Entity</th>
-                        <th style="padding: 12px 16px;">Details</th>
+                        <th style="padding: 14px 20px;">Timestamp</th>
+                        <th style="padding: 14px 14px;">Actor</th>
+                        <th style="padding: 14px 14px;">Action</th>
+                        <th style="padding: 14px 14px;">Entity</th>
+                        <th style="padding: 14px 14px;">ID</th>
+                        <th style="padding: 14px 20px;">Details</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td style="padding: 12px 16px; font-size: 13px; color: #6f8295;">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
-                        <td style="padding: 12px 16px;"><strong style="color: #37485a;">{{ log.actor.username }}</strong></td>
-                        <td style="padding: 12px 16px;">
-                            {% if log.action_type == 'CREATE' %}
-                                <span class="pc-chip pc-chip--completed">{{ log.action_type }}</span>
-                            {% elif log.action_type == 'DELETE' %}
-                                <span class="pc-chip pc-chip--danger">{{ log.action_type }}</span>
-                            {% else %}
-                                <span class="pc-chip pc-chip--scheduled">{{ log.action_type }}</span>
+                    {% for log in page_obj %}
+                    <tr style="transition: background 0.12s;" onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background='transparent'">
+                        <td style="padding: 13px 20px; font-size: 12px; color: #6f8295; white-space: nowrap;">
+                            {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                        </td>
+                        <td style="padding: 13px 14px;">
+                            <strong style="color: #37485a; font-size: 13px;">
+                                {{ log.actor.username|default:"—" }}
+                            </strong>
+                            {% if log.actor.role %}
+                            <div style="font-size: 11px; color: #8e9aab;">{{ log.actor.role }}</div>
                             {% endif %}
                         </td>
-                        <td style="padding: 12px 16px; font-size: 14px;">{{ log.entity_type }} <span style="color: #8e9aab;">(ID: {{ log.entity_id }})</span></td>
-                        <td style="padding: 12px 16px; font-size: 13px; color: #6f8295;">{{ log.changes|truncatechars:60 }}</td>
+                        <td style="padding: 13px 14px;">
+                            {% if log.action_type == 'CREATE' %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 4px 10px; font-size: 12px;">CREATE</span>
+                            {% elif log.action_type == 'DELETE' %}
+                                <span class="pc-chip pc-chip--danger" style="padding: 4px 10px; font-size: 12px;">DELETE</span>
+                            {% elif log.action_type == 'LOGIN' %}
+                                <span class="pc-chip" style="padding: 4px 10px; font-size: 12px; background: #eef1fa; color: #2c3e91; border: 1px solid #c5cef5;">LOGIN</span>
+                            {% else %}
+                                <span class="pc-chip pc-chip--scheduled" style="padding: 4px 10px; font-size: 12px;">{{ log.action_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 13px 14px; font-size: 13px; font-weight: 600; color: #1a2e3b;">
+                            {{ log.entity_type }}
+                        </td>
+                        <td style="padding: 13px 14px; font-size: 13px; color: #8e9aab;">
+                            {{ log.entity_id|default:"—" }}
+                        </td>
+                        <td style="padding: 13px 20px; font-size: 12px; color: #6f8295; max-width: 300px;">
+                            {{ log.changes|truncatechars:80 }}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align: center; color: #8e9aab; padding: 40px 20px;">No audit logs found.</td>
+                        <td colspan="6" style="text-align: center; color: #8e9aab; padding: 60px 20px;">
+                            <i data-feather="inbox" style="width: 40px; height: 40px; display: block; margin: 0 auto 12px; opacity: 0.3;"></i>
+                            No audit logs match the current filters.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    {# ── Pagination ───────────────────────────────────────────────────────────── #}
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--pc-space-4); flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 13px; color: #596578;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            &nbsp;·&nbsp; {{ page_obj.paginator.count }} entries
+        </div>
+        <div style="display: flex; gap: 6px;">
+            {% if page_obj.has_previous %}
+            <a href="?page=1{% if current_action_type %}&action_type={{ current_action_type }}{% endif %}{% if current_entity_type %}&entity_type={{ current_entity_type }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 8px; padding: 6px 14px; font-size: 13px;">
+                «
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if current_action_type %}&action_type={{ current_action_type }}{% endif %}{% if current_entity_type %}&entity_type={{ current_entity_type }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 8px; padding: 6px 14px; font-size: 13px;">
+                ‹ Prev
+            </a>
+            {% endif %}
+
+            <span class="pc-btn" style="border-radius: 8px; padding: 6px 14px; font-size: 13px; background: #2c3e91; color: white; border: none; cursor: default;">
+                {{ page_obj.number }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if current_action_type %}&action_type={{ current_action_type }}{% endif %}{% if current_entity_type %}&entity_type={{ current_entity_type }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 8px; padding: 6px 14px; font-size: 13px;">
+                Next ›
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if current_action_type %}&action_type={{ current_action_type }}{% endif %}{% if current_entity_type %}&entity_type={{ current_entity_type }}{% endif %}{% if current_date_from %}&date_from={{ current_date_from }}{% endif %}{% if current_date_to %}&date_to={{ current_date_to }}{% endif %}"
+               class="pc-btn pc-btn--ghost" style="border-radius: 8px; padding: 6px 14px; font-size: 13px;">
+                »
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}
