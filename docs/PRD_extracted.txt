@@ -1,0 +1,248 @@
+Product Requirements Document (PRD)
+ProClinic — Enterprise Hospital Management System (HMS)
+Prepared for: Software Engineering (IT632)
+Prepared by: Project Team
+January 18, 2026
+Source: Project proposal (ProClinic).
+Contents
+1 Executive summary 3
+2 Goals & success metrics 3
+3 Stakeholders 3
+4 Scope 3
+5 Functional requirements 4
+5.1 Authentication & RBAC . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+5.2 Patient EHR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+5.3 Appointment Management . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+5.4 Prescription Management . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+5.5 Billing & Invoicing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+5.6 Audit Logging . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+5.7 Research & Blog Portal . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+5.8 API Layer . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+6 Non-functional requirements 5
+7 Data model (high-level) 5
+8 API endpoints (example surface) 6
+9 UX / UI notes 6
+10 Test plan 6
+11 Deployment & environment 7
+12 Security & compliance 7
+13 Risks & mitigations 7
+14 Timeline & milestones (12-week plan) 7
+15 Deliverables 7
+16 Acceptance checklist (pre-submission) 8
+2
+1 Executive summary
+BuildProClinic (MedFlow)— a three-tier, Django + DRF-based Hospital Management
+System (HMS) that digitizes clinical workflows (EHR, appointments, prescriptions, billing),
+enforces role-based access control (RBAC), logs auditable changes, and provides a Research
+& Blog portal for doctors to publish internal research. The system will be extensible, secure,
+testable, and demonstrable for semester submission.
+2 Goals & success metrics
+Primary goals
+•Deliver a working HMS with EHR, Appointment, Prescription, Billing, Audit Logging,
+and Research/Blog modules.
+•Provide REST API endpoints so a SPA or mobile client can be added later.
+•ProducerequiredSEdeliverables: proposal, designdocs(UMLs), coderepowithrequirements.txt,
+tests, demo slides/video.
+Success metrics
+•All core features implemented and demoable.
+•At least 70% of planned unit/API tests pass (smoke + integration).
+•Documentation & UML artifacts (Use-case, Class, Sequence, Activity, ERD) completed.
+•Deployment reproducible viadocker-compose(or documented local steps).
+3 Stakeholders
+•Primary: Course instructor / evaluators.
+•Secondary: Project team (Naitik, Harshal, Parshwa, Jaydip).
+•End-users (actors): Admin, Doctor, Nurse, Receptionist, Patient, System (background
+jobs).
+•Others: Future developers, auditors.
+4 Scope
+In-scope (MUST)
+•User & Role Management (Admin/Doctor/Nurse/Receptionist/Patient) with RBAC.
+•Electronic Health Records (patient profile, history, allergies, visit notes).
+•Appointment Management (book/reschedule/cancel, availability, calendar).
+•Prescription Management (generate prescriptions, PDF export).
+•Billing & Invoicing (itemized invoices, payment status).
+•Audit Logging (Create/Update/Delete tracking).
+•Research & Blog Portal (upload papers, admin approval workflow).
+•REST API (DRF) for major entities.
+•Basic responsive UI (Django templates + Bootstrap).
+•requirements.txt, basic tests, and final report.
+Out of scope (for semester)
+•Full external peer review workflow for research (internal publication only).
+•Production-grade high-availability / backup strategy (only basic deployment).
+3
+•Live payment gateway integration (use stubs or sandbox).
+5 Functional requirements
+Each feature includes a brief description and acceptance criteria.
+5.1 Authentication & RBAC
+Description:Register/login, password management, roles and server-side permissions.
+Acceptance:
+•Admin can create users and assign roles.
+•Doctor can view/edit own patients (unless admin override).
+•Unauthorized requests return 403 or redirect to login.
+5.2 Patient EHR
+Description:CRUD patient profiles, medical history, allergies, visit records, lab report at-
+tachments.
+Acceptance:
+•Create patient record with core demographics.
+•Visit entries persist with timestamp and author.
+•Attach/preview lab report PDFs (DEV: local MEDIA).
+5.3 Appointment Management
+Description:Book/reschedule/cancel appointments; show doctor availability; conflict preven-
+tion.
+Acceptance:
+•Patients or receptionists can create appointments within doctor’s slots.
+•System prevents double-booking and shows conflict warning.
+•Doctors see daily calendar view.
+•Note:System logs a “notification sent” event to the console/audit log when booked (Real
+Email/SMS integration is out of scope).
+5.4 Prescription Management
+Description:Create digital prescriptions (medicines, dosage, instructions) and export PDF.
+Acceptance:
+•Create prescription linked to patient and visit.
+•Export printable PDF.
+•Pharmacy/authorized roles can view read-only.
+5.5 Billing & Invoicing
+Description:Generate invoices for consultations and tests; mark payment status.
+Acceptance:
+•Create invoice line items, compute totals, mark paid/unpaid.
+•Admin or billing role can view revenue summary.
+4
+5.6 Audit Logging
+Description:Record who/what/when for sensitive CRUD operations.
+Acceptance:
+•CRUD on patient/prescription/billing recorded with user id, timestamp, changes (if pos-
+sible).
+•Admin can query recent audit logs.
+5.7 Research & Blog Portal
+Description:Doctors draft/publish blog posts and upload paper PDFs; admin approval re-
+quired.
+Acceptance:
+•Doctor uploads paper (PDF) with metadata (title, authors, abstract).
+•Upload queued for admin approval; approved items visible in public list.
+•Admin can reject/approve and add notes.
+5.8 API Layer
+Description:DRF endpoints (CRUD + filters + pagination) for core models.
+Architecture Note:The Web UI will primarily use Django Templates with direct ORM
+access for development speed. The REST API is implementedin parallelto support future
+mobile/SPA clients.
+Acceptance:
+•Endpoints require auth where appropriate; return JSON and support pagination.
+•Support query parameters for filtering: e.g.,GET /api/patients/?search=nameorGET
+/api/appointments/?date=2026-01-20.
+6 Non-functional requirements
+•Security:RBAC enforced server-side; secure password hashing; audit logs append-only;
+file uploads validated for MIME and size.
+•Privacy:Patient data treated as sensitive; avoid exposing PII in public endpoints or
+logs.
+•Performance:Responsive for up to∼50 concurrent dev users (no heavy tuning).
+•Maintainability:ModularDjangoapps(accounts,ehr,appointments,billing,publications,
+audit).
+•Reliability:Repeatable migrations; use DB backups in production.
+•Usability:Simple role-specific UIs; client- and server-side validation.
+•Reproducibility:requirements.txtandREADMEwithsetupsteps(WSLinstructions
+included).
+7 Data model (high-level)
+Core tables and suggested fields (detailed ERD to appear in Design Document).
+Table Suggested fields (high-level)
+User username, email, password_hash, role, profile fields
+Patient id, first_name, last_name, dob, contact, address, blood_group,
+allergies
+5
+Visit id, patient_id(FK),doctor_id(FK),visit_date, notes, diagnosis
+Appointment id, patient_id, doctor_id, scheduled_time, status, created_by
+Prescription id, visit_id, doctor_id, instructions, pdf_file
+PrescriptionItemid, prescription_id (FK), medicine_name, dosage, duration
+Invoice id, patient_id, total_amount, status
+InvoiceItemid, invoice_id (FK), service_name, unit_cost, quantity
+Publication id, doctor_id, title, abstract, authors, pdf_file, status
+(draft/pending/approved)
+AuditLog id, actor_id, action_type, entity_type, entity_id, timestamp,
+changes (JSON)
+8 API endpoints (example surface)
+Authentication via token/session (DRF token/JWT optional).
+•POST /api/auth/login/
+•POST /api/auth/logout/
+•GET /api/patients/(supports?search=)
+•GET /api/patients/{id}/,PUT /api/patients/{id}/,DELETE /api/patients/{id}/
+•GET /api/appointments/(supports?date=and?doctor_id=)
+•POST /api/appointments/
+•GET /api/appointments/{id}/,PUT /api/appointments/{id}/
+•GET /api/prescriptions/,POST /api/prescriptions/
+•GET /api/prescriptions/{id}/pdf/
+•GET /api/invoices/,POST /api/invoices/
+•GET /api/publications/,POST /api/publications/
+•POST /api/publications/{id}/approve/(admin)
+•GET /api/audit/logs/(admin)
+9 UX / UI notes
+•Minimalistic UI: header with role switcher, left nav (Dashboard, Patients, Appointments,
+Prescriptions, Billing, Publications).
+•Doctor dashboard: today’s appointments, quick patient search.
+•Admin dashboard: user management, revenue snapshot, pending publications.
+•Patient portal: upcoming appointments and prescriptions.
+•Use Bootstrap 5, server-side rendering (Django templates) for faster delivery.
+10 Test plan
+Test types:
+•Unit tests: models, utility functions.
+•API tests: authentication, CRUD, permission checks (DRFAPITestCase).
+•Integration/smoke tests: booking flow end-to-end (appointment→visit→prescription
+→invoice).
+•Manual smoke checklist for demo (login, create patient, book appointment, generate pre-
+scription, export PDF, upload publication).
+6
+Acceptance testing:Create test cases for each acceptance criterion listed in the Functional
+Requirements. Summarize pass/fail for the final Test Report.
+11 Deployment & environment
+Development:WSL2 Ubuntu + Python 3.12, virtualenv, local Postgres or SQLite for quick
+runs.
+Recommended production-like:docker-composewith services:
+•web(gunicorn)
+•db(Postgres)
+•redis(optional for Celery)
+•worker(Celery) and optionallynginx
+Static files viacollectstatic; media stored locally (or S3 in production).
+12 Security & compliance
+•Validate and limit uploads (max file size, allowed MIME types).
+•Use HTTPS in production; secure cookies (SESSION_COOKIE_SECURE).
+•Role-based permission checks on UI and API.
+•Audit logs append-only (immutable).
+•Sanitize all user input; escape or sanitize rich text for blogs.
+13 Risks & mitigations
+•Dependency incompatibility— pin versions inrequirements.txt, use virtualenv.
+•File-upload malware— admin approval + mimetype checks for uploaded papers (dev);
+consider virus scanning for production.
+•Time constraints— implement core features first; treat research/blog as optional if
+time-limited.
+•DB migration issues— keep migrations small and tested; backup DB before major
+changes.
+14 Timeline & milestones (12-week plan)
+Week(s) Milestone / Work
+Week 0 (Jan 18) Proposal submitted
+Weeks 1–2 Project skeleton, auth & RBAC, core models (User, Patient)
+Weeks 3–4 Appointment module + doctor calendar + tests
+Weeks 5–6 Prescription + PDF export + billing core flows
+Weeks 7–8 Research portal + media uploads + audit logging
+Weeks 9–10 UI polish, analytics, complete test suite
+Weeks 11–12 Dockerize, finalize report, demo slides/video, submit
+15 Deliverables
+•GitHub repo (source +requirements.txt+ README).
+•Design Document: UML diagrams (use-case, class, sequence, activity) + ERD.
+•Test Report & coverage summary.
+•Demo video/screenshots & final slides.
+7
+•Final Project Report (architecture, deployment, limitations).
+16 Acceptance checklist (pre-submission)
+•Code builds and runs locally (steps in README).
+•All core flows demoable.
+•Unit & API test results included.
+•UML diagrams and ERD included in Design Document.
+•requirements.txtpresent.
+•Admin account created and credentials documented for demo.
+•Block diagram figure/caption present (Figure 1).
+Next immediate actions (options):
+1. Generate Use Case Diagram (PlantUML).
+2. Generate Class Diagram (PlantUML).
+3. Draft sample README with exact setup commands (WSL-friendly).
+4. Produce a set of acceptance test cases (detailed steps).
+End of PRD — ProClinic.
+Prepared: January 18, 2026
+8

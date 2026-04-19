@@ -1,0 +1,586 @@
+--- backend/manage.py ---
+def main(...):
+
+--- backend/publications/views.py ---
+def _is_admin(...):
+def public_list(...):
+def public_detail(...):
+def submit_paper(...):
+def doctor_dashboard(...):
+def admin_approval_panel(...):
+def admin_approve(...):
+def admin_reject(...):
+
+--- backend/publications/__init__.py ---
+
+--- backend/publications/apps.py ---
+class PublicationsConfig(AppConfig):
+
+--- backend/publications/tests.py ---
+
+--- backend/publications/admin.py ---
+class PublicationAdmin:
+    def approve_publications(...):
+    def reject_publications(...):
+
+--- backend/publications/forms.py ---
+class PublicationForm:
+
+--- backend/publications/models.py ---
+class Publication:
+    def __str__(...):
+    def approve(...):
+    def reject(...):
+    def is_public(...):
+
+--- backend/publications/urls.py ---
+
+--- backend/audit/utils.py ---
+def log_action(...):
+
+--- backend/audit/signals.py ---
+def _safe_value(...):
+def _snapshot(...):
+def _get_tracked(...):
+def _entity_name(...):
+def _is_tracked(...):
+def _write_log(...):
+def _capture_old_state(...):
+def _log_save(...):
+def _log_delete(...):
+
+--- backend/audit/views.py ---
+def audit_log_list(...):
+
+--- backend/audit/middleware.py ---
+def get_current_user(...):
+def set_current_user(...):
+class AuditUserMiddleware:
+    def __init__(...):
+    def __call__(...):
+
+--- backend/audit/__init__.py ---
+
+--- backend/audit/apps.py ---
+class AuditConfig(AppConfig):
+    def ready(...):
+
+--- backend/audit/tests.py ---
+
+--- backend/audit/admin.py ---
+class AuditLogAdmin:
+    def has_add_permission(...):
+    def has_change_permission(...):
+    def has_delete_permission(...):
+
+--- backend/audit/models.py ---
+class AuditLog:
+    def __str__(...):
+
+--- backend/audit/urls.py ---
+
+--- backend/api/serializers.py ---
+class AppointmentSerializer:
+class PrescriptionItemSerializer:
+class PrescriptionSerializer:
+class InvoiceItemSerializer:
+class InvoiceSerializer:
+class PublicationSerializer:
+    def get_approver_name(...):
+class PublicPublicationSerializer:
+class AuditLogSerializer:
+
+--- backend/api/views.py ---
+class AppointmentViewSet:
+    def cancel(...):
+    def reschedule(...):
+class PrescriptionViewSet:
+    def pdf(...):
+    def html_preview(...):
+class InvoiceViewSet:
+class PublicationViewSet:
+    def public_list(...):
+    def approve(...):
+    def reject(...):
+class AuditLogViewSet:
+    def get_queryset(...):
+
+--- backend/api/filters.py ---
+class PatientFilter:
+class AppointmentFilter:
+class PrescriptionFilter:
+class LabReportFilter:
+class InvoiceFilter:
+class PublicationFilter:
+
+--- backend/api/patient_views.py ---
+def _require_patient(...):
+class PatientProfileView(APIView):
+    def get(...):
+    def put(...):
+    def patch(...):
+class PatientVisitListView:
+    def get_queryset(...):
+class PatientAppointmentListCreateView(APIView):
+    def get(...):
+    def post(...):
+class PatientAppointmentRescheduleView(APIView):
+    def put(...):
+    def _get_own_appointment(...):
+class PatientAppointmentCancelView(APIView):
+    def post(...):
+class PatientPrescriptionListView:
+    def get_queryset(...):
+class PatientPrescriptionDetailView:
+    def get_object(...):
+class PatientInvoiceListView:
+    def get_queryset(...):
+class PatientLabReportListCreateView(APIView):
+    def get(...):
+    def post(...):
+
+--- backend/api/pagination.py ---
+class StandardResultsSetPagination(PageNumberPagination):
+class LargeResultsSetPagination(PageNumberPagination):
+
+--- backend/api/tests_extended.py ---
+def _jwt(...):
+def _make_pdf(...):
+class BaseTestCase(TestCase):
+    def setUpTestData(...):
+    def staff_client(...):
+    def patient_client(...):
+class AuditMiddlewareTests(TestCase):
+    def setUp(...):
+    def _get_response(...):
+    def test_authenticated_user_stored(...):
+    def test_unauthenticated_user_not_stored(...):
+    def test_thread_local_cleared_after_response(...):
+    def test_set_and_get_current_user(...):
+class AuditSignalHelperTests(BaseTestCase):
+    def test_is_tracked_patient(...):
+    def test_is_tracked_unknown_model(...):
+    def test_entity_name_patient(...):
+    def test_safe_value_sensitive_field(...):
+    def test_safe_value_skip_field(...):
+    def test_safe_value_datetime(...):
+    def test_safe_value_related_object(...):
+    def test_snapshot_excludes_sensitive(...):
+    def test_snapshot_specific_fields(...):
+class AuditSignalIntegrationTests(BaseTestCase):
+    def setUp(...):
+    def tearDown(...):
+    def test_patient_create_logged(...):
+    def test_patient_update_diff_captured(...):
+    def test_patient_delete_logged(...):
+    def test_appointment_create_logged(...):
+    def test_no_update_log_when_nothing_changes(...):
+    def test_invoice_create_logged(...):
+    def test_publication_approve_logs_update(...):
+    def test_publication_reject_logs_update(...):
+    def test_actor_is_none_when_no_user_set(...):
+class PublicationModelTests(BaseTestCase):
+    def _pub(...):
+    def test_str_representation(...):
+    def test_approve_sets_status_and_reviewer(...):
+    def test_reject_sets_status_and_reason(...):
+    def test_is_public_approved(...):
+    def test_is_public_pending(...):
+    def test_approve_clears_rejection_reason(...):
+class PublicationAPITests(BaseTestCase):
+    def _pub(...):
+    def test_public_list_returns_only_approved(...):
+    def test_public_list_no_auth_required(...):
+    def test_public_list_search_filter(...):
+    def test_admin_can_approve(...):
+    def test_doctor_cannot_approve(...):
+    def test_approve_already_approved_returns_400(...):
+    def test_admin_can_reject_with_reason(...):
+    def test_reject_already_rejected_returns_400(...):
+    def test_doctor_cannot_reject(...):
+    def test_staff_list_filter_by_status(...):
+class AppointmentModelTests(BaseTestCase):
+    def _appt(...):
+    def test_cancel_sets_metadata(...):
+    def test_is_cancellable_scheduled(...):
+    def test_is_cancellable_completed(...):
+    def test_is_cancellable_cancelled(...):
+    def test_reschedule_updates_time_and_status(...):
+    def test_str_representation(...):
+class LabReportModelTests(BaseTestCase):
+    def _lab(...):
+    def test_mark_verified(...):
+    def test_mark_archived(...):
+    def test_str_representation(...):
+class StaffAppointmentAPITests(BaseTestCase):
+    def setUp(...):
+    def _appt(...):
+    def test_list_paginated(...):
+    def test_filter_by_status(...):
+    def test_filter_by_doctor_id(...):
+    def test_cancel_via_api(...):
+    def test_reschedule_via_api(...):
+    def test_reschedule_invalid_time_returns_400(...):
+    def test_cancel_completed_appointment_returns_400(...):
+    def test_reschedule_missing_time_returns_400(...):
+class StaffPrescriptionAPITests(BaseTestCase):
+    def setUp(...):
+    def test_list_prescriptions_paginated(...):
+    def test_filter_by_patient_id(...):
+    def test_search_by_medicine(...):
+class StaffInvoiceAPITests(BaseTestCase):
+    def setUp(...):
+    def test_list_invoices_paginated(...):
+    def test_filter_by_status(...):
+    def test_filter_by_patient_id(...):
+class StaffPatientAPITests(BaseTestCase):
+    def setUp(...):
+    def test_list_patients_paginated(...):
+    def test_search_by_name(...):
+    def test_filter_by_blood_group(...):
+    def test_page_size_param(...):
+class PublicationWebViewTests(BaseTestCase):
+    def _pub(...):
+    def test_public_list_view_accessible_without_login(...):
+    def test_public_list_excludes_pending(...):
+    def test_public_detail_view(...):
+    def test_public_detail_returns_404_for_pending(...):
+    def test_admin_approval_panel_requires_auth(...):
+    def test_admin_approval_panel_accessible_to_admin(...):
+    def test_admin_approve_view_post(...):
+    def test_admin_reject_view_post(...):
+    def test_doctor_dashboard_login_required(...):
+    def test_doctor_dashboard_shows_own_papers(...):
+    def test_submit_paper_sets_status_pending(...):
+class AuditLogModelTests(TestCase):
+    def setUpTestData(...):
+    def test_str_includes_action_and_entity(...):
+
+--- backend/api/__init__.py ---
+
+--- backend/api/permissions.py ---
+class IsPatient(BasePermission):
+    def has_permission(...):
+class IsDoctor(BasePermission):
+    def has_permission(...):
+class IsAdminRole(BasePermission):
+    def has_permission(...):
+class IsStaff(BasePermission):
+    def has_permission(...):
+
+--- backend/api/tests.py ---
+class PatientTestBase(TestCase):
+    def setUpTestData(...):
+    def setUp(...):
+    def authenticate_patient(...):
+    def authenticate_doctor(...):
+    def _future_time(...):
+class PatientProfileTests(PatientTestBase):
+    def test_unauthenticated_returns_401(...):
+    def test_doctor_returns_403(...):
+    def test_get_own_profile(...):
+    def test_update_own_profile(...):
+    def test_cannot_access_other_patient_profile(...):
+    def test_patient2_sees_own_profile(...):
+class PatientAppointmentTests(PatientTestBase):
+    def test_book_appointment_success(...):
+    def test_double_booking_same_doctor_same_time_fails(...):
+    def test_list_appointments(...):
+    def test_list_appointments_filter_upcoming(...):
+    def test_cancel_appointment(...):
+    def test_cancel_already_cancelled_fails(...):
+    def test_cancel_other_patients_appointment_fails(...):
+    def test_reschedule_appointment(...):
+    def test_reschedule_conflict_fails(...):
+class PatientPrescriptionTests(PatientTestBase):
+    def setUpTestData(...):
+    def test_list_own_prescriptions(...):
+    def test_detail_own_prescription(...):
+    def test_other_patient_cannot_see_prescriptions(...):
+    def test_other_patient_cannot_see_prescription_detail(...):
+    def test_doctor_cannot_use_patient_endpoint(...):
+class PatientInvoiceTests(PatientTestBase):
+    def setUpTestData(...):
+    def test_list_own_invoices(...):
+    def test_other_patient_cannot_see_invoices(...):
+    def test_patient_cannot_create_invoice(...):
+    def test_patient_blocked_from_staff_invoice_api(...):
+class PatientLabReportTests(PatientTestBase):
+    def _make_pdf(...):
+    def test_upload_lab_report_pdf(...):
+    def test_list_own_lab_reports(...):
+    def test_other_patient_cannot_see_lab_reports(...):
+    def test_upload_invalid_file_type_rejected(...):
+    def test_upload_file_over_5mb_rejected(...):
+class PatientVisitTests(PatientTestBase):
+    def setUpTestData(...):
+    def test_list_own_visits(...):
+    def test_other_patient_cannot_see_visits(...):
+class StaffAPIPermissionTests(PatientTestBase):
+    def test_patient_blocked_from_appointments_api(...):
+    def test_patient_blocked_from_patients_api(...):
+    def test_patient_blocked_from_prescriptions_api(...):
+    def test_patient_blocked_from_invoices_api(...):
+    def test_doctor_can_access_staff_api(...):
+
+--- backend/api/urls.py ---
+
+--- backend/api/patient_urls.py ---
+
+--- backend/api/patient_serializers.py ---
+class PatientProfileSerializer:
+class PatientVisitSerializer:
+    def get_doctor_name(...):
+class PatientAppointmentSerializer:
+    def get_doctor_name(...):
+class PatientAppointmentBookSerializer:
+    def validate_doctor(...):
+class PatientAppointmentRescheduleSerializer:
+    def validate_doctor(...):
+class PatientPrescriptionItemSerializer:
+class PatientPrescriptionSerializer:
+    def get_doctor_name(...):
+class PatientInvoiceItemSerializer:
+class PatientInvoiceSerializer:
+class LabReportSerializer:
+
+--- backend/appointments/views.py ---
+def book_appointment(...):
+def doctor_appointments(...):
+def doctor_appointment_detail(...):
+def doctor_unavailability(...):
+def delete_doctor_unavailability(...):
+def get_available_slots(...):
+def receptionist_appointments(...):
+def receptionist_cancel_appointment(...):
+def receptionist_reschedule_appointment(...):
+def receptionist_mark_noshow(...):
+
+--- backend/appointments/__init__.py ---
+
+--- backend/appointments/apps.py ---
+class AppointmentsConfig(AppConfig):
+
+--- backend/appointments/tests.py ---
+
+--- backend/appointments/admin.py ---
+class AppointmentAdmin:
+class DoctorUnavailabilityAdmin:
+
+--- backend/appointments/forms.py ---
+class AppointmentForm:
+    def __init__(...):
+    def clean(...):
+class DoctorUnavailabilityForm:
+class VisitNoteForm:
+
+--- backend/appointments/models.py ---
+class DoctorUnavailability:
+    def clean(...):
+    def save(...):
+    def __str__(...):
+class Appointment:
+    def clean(...):
+    def save(...):
+    def cancel(...):
+    def reschedule(...):
+    def is_cancellable(...):
+    def __str__(...):
+
+--- backend/appointments/urls.py ---
+
+--- backend/billing/utils.py ---
+def get_consultation_fee(...):
+def _parse_decimal(...):
+def _build_invoice_context(...):
+def render_invoice_html(...):
+def generate_invoice_pdf(...):
+def invoice_pdf_response(...):
+def _make_invoice_response(...):
+
+--- backend/billing/signals.py ---
+def create_draft_invoice_on_completion(...):
+
+--- backend/billing/views.py ---
+def _parse_decimal(...):
+def _accountant_or_admin(...):
+def generate_invoice(...):
+def patient_invoices(...):
+def invoice_list(...):
+def invoice_detail(...):
+def invoice_update_status(...):
+def api_medicines(...):
+def api_prescription_context(...):
+def api_patient_appointments(...):
+def medicine_list(...):
+def medicine_create(...):
+def medicine_delete(...):
+def invoice_pdf_download(...):
+
+--- backend/billing/__init__.py ---
+
+--- backend/billing/apps.py ---
+class BillingConfig(AppConfig):
+    def ready(...):
+
+--- backend/billing/tests.py ---
+
+--- backend/billing/admin.py ---
+class InvoiceItemInline:
+class InvoiceAdmin:
+    def save_related(...):
+
+--- backend/billing/forms.py ---
+class InvoiceForm:
+    def __init__(...):
+
+--- backend/billing/models.py ---
+class MedicineMaster:
+    def __str__(...):
+class Invoice:
+    def recalculate_totals(...):
+    def __str__(...):
+class InvoiceItem:
+    def line_total(...):
+    def __str__(...):
+
+--- backend/billing/urls.py ---
+
+--- backend/accounts/views.py ---
+def choose_login(...):
+class RoleBasedLoginView(LoginView):
+    def form_valid(...):
+class StaffLoginView(RoleBasedLoginView):
+class PatientLoginView(RoleBasedLoginView):
+def patient_signup(...):
+def create_staff_account(...):
+def patient_profile(...):
+def staff_profile(...):
+
+--- backend/accounts/__init__.py ---
+
+--- backend/accounts/apps.py ---
+class AccountsConfig(AppConfig):
+
+--- backend/accounts/tests.py ---
+
+--- backend/accounts/admin.py ---
+class CustomUserAdmin(UserAdmin):
+
+--- backend/accounts/forms.py ---
+class PatientSignUpForm(UserCreationForm):
+    def clean_email(...):
+class StaffCreationForm(UserCreationForm):
+    def save(...):
+class PatientProfileForm:
+class PatientPasswordChangeForm(PasswordChangeForm):
+class StaffProfileForm:
+
+--- backend/accounts/models.py ---
+class CustomUser(AbstractUser):
+    def __str__(...):
+
+--- backend/accounts/urls.py ---
+
+--- backend/prescriptions/utils.py ---
+def _build_context(...):
+def render_prescription_html(...):
+def generate_prescription_pdf(...):
+def prescription_pdf_response(...):
+def _make_response(...):
+
+--- backend/prescriptions/views.py ---
+def create_prescription(...):
+def pharmacist_prescription_list(...):
+def pharmacist_prescription_detail(...):
+def dispense_prescription(...):
+
+--- backend/prescriptions/__init__.py ---
+
+--- backend/prescriptions/apps.py ---
+class PrescriptionsConfig(AppConfig):
+
+--- backend/prescriptions/tests.py ---
+
+--- backend/prescriptions/admin.py ---
+class PrescriptionItemInline:
+class PrescriptionAdmin:
+
+--- backend/prescriptions/forms.py ---
+class PrescriptionForm:
+    def __init__(...):
+
+--- backend/prescriptions/models.py ---
+class Prescription:
+    def __str__(...):
+class PrescriptionItem:
+    def __str__(...):
+
+--- backend/prescriptions/urls.py ---
+
+--- backend/core/utils.py ---
+def send_appointment_notification(...):
+
+--- backend/core/views.py ---
+def home(...):
+def design_system(...):
+def prototype_prescription_a4(...):
+def prototype_invoice_a4(...):
+def permission_error(...):
+def dashboard(...):
+
+--- backend/core/settings.py ---
+
+--- backend/core/__init__.py ---
+
+--- backend/core/wsgi.py ---
+
+--- backend/core/urls.py ---
+
+--- backend/core/asgi.py ---
+
+--- backend/patients/serializers.py ---
+class PatientSerializer:
+
+--- backend/patients/utils.py ---
+def get_patient_profile(...):
+
+--- backend/patients/views.py ---
+class PatientViewSet:
+def patient_list(...):
+def patient_detail(...):
+def lab_report_verify(...):
+def lab_report_archive(...):
+def patient_my_prescriptions(...):
+def patient_my_visits(...):
+def patient_my_lab_reports(...):
+def patient_cancel_appointment(...):
+
+--- backend/patients/__init__.py ---
+
+--- backend/patients/apps.py ---
+class PatientsConfig(AppConfig):
+
+--- backend/patients/tests.py ---
+
+--- backend/patients/admin.py ---
+class PatientAdmin:
+class VisitAdmin:
+def _action_mark_verified(...):
+def _action_mark_archived(...):
+class LabReportAdmin:
+    def status_badge(...):
+
+--- backend/patients/models.py ---
+class Patient:
+    def __str__(...):
+class Visit:
+    def __str__(...):
+def _validate_lab_report_pdf(...):
+class LabReport:
+    def __str__(...):
+    def mark_verified(...):
+    def mark_archived(...):
+
+--- backend/patients/urls.py ---
+
