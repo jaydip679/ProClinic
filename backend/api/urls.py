@@ -6,9 +6,10 @@ from rest_framework_simplejwt.views import (
 )
 from patients.views import PatientViewSet
 from .views import (
-    AppointmentViewSet, 
-    PrescriptionViewSet, 
-    InvoiceViewSet, 
+    AppointmentViewSet,
+    AuditLogViewSet,
+    PrescriptionViewSet,
+    InvoiceViewSet,
     PublicationViewSet
 )
 
@@ -18,6 +19,7 @@ router.register(r'appointments', AppointmentViewSet, basename='appointment')
 router.register(r'prescriptions', PrescriptionViewSet, basename='prescription')
 router.register(r'invoices', InvoiceViewSet, basename='invoice')
 router.register(r'publications', PublicationViewSet, basename='publication')
+router.register(r'audit/logs', AuditLogViewSet, basename='auditlog')
 
 urlpatterns = [
     path('', include(router.urls)),

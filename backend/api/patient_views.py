@@ -37,32 +37,11 @@ from .permissions import IsPatient
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
-def _get_patient_for_user(user):
-    """Return the Patient record linked to the authenticated user.
-
-    Tries the direct FK first, then falls back to legacy email/phone matching.
-    """
-    # Direct FK lookup
-    patient = getattr(user, 'patient_profile', None)
-    if patient is not None:
-        return patient
-
-    # Legacy fallback
-    patient = Patient.objects.filter(
-        Q(email=user.email) | Q(contact_number=user.phone_number)
-    ).first()
-
-    # Repair: attach FK for future lookups
-    if patient and patient.user_id is None:
-        patient.user = user
-        patient.save(update_fields=['user'])
-
-    return patient
-
+from patients.utils import get_patient_profile
 
 def _require_patient(user):
     """Return Patient or raise 404."""
-    patient = _get_patient_for_user(user)
+    patient = get_patient_profile(user)
     if patient is None:
         raise NotFound("Patient profile not found. Please contact reception.")
     return patient

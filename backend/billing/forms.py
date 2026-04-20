@@ -12,6 +12,24 @@ class InvoiceForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Prevent loading thousands of appointments initially
+        if 'appointment' in self.fields:
+            if not self.is_bound:
+                from appointments.models import Appointment
+                self.fields['appointment'].queryset = Appointment.objects.none()
+            else:
+                try:
+                    patient_id = self.data.get('patient')
+                    from appointments.models import Appointment
+                    if patient_id:
+                        self.fields['appointment'].queryset = Appointment.objects.filter(patient_id=int(patient_id))
+                    else:
+                        self.fields['appointment'].queryset = Appointment.objects.none()
+                except (ValueError, TypeError):
+                    self.fields['appointment'].queryset = Appointment.objects.none()
+
 InvoiceItemFormSet = inlineformset_factory(
     Invoice, InvoiceItem,
     fields=('service_name', 'unit_cost', 'quantity'),

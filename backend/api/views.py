@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 
 from appointments.models import Appointment
+from audit.models import AuditLog
 from billing.models import Invoice
 from patients.models import LabReport, Patient
 from prescriptions.models import Prescription
@@ -24,6 +25,7 @@ from .pagination import LargeResultsSetPagination, StandardResultsSetPagination
 from .permissions import IsStaff
 from .serializers import (
     AppointmentSerializer,
+    AuditLogSerializer,
     InvoiceSerializer,
     PrescriptionSerializer,
     PublicationSerializer,
@@ -276,3 +278,32 @@ class PublicationViewSet(viewsets.ModelViewSet):
         reason = request.data.get('reason', '').strip()
         paper.reject(reviewer=request.user, reason=reason)
         return Response(self.get_serializer(paper).data, status=status.HTTP_200_OK)
+
+
+# ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    GET  /api/audit/logs/        — paginated list (ADMIN only)
+    GET  /api/audit/logs/{id}/   — single entry
+
+    Supports:
+      ?action_type=CREATE|UPDATE|DELETE|LOGIN
+      ?entity_type=Invoice|Patient|...
+      ?ordering=timestamp|-timestamp
+      ?search=<username or entity type>
+    """
+    serializer_class   = AuditLogSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends    = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields   = ['action_type', 'entity_type']
+    search_fields      = ['entity_type', 'actor__username', 'actor__email']
+    ordering_fields    = ['timestamp']
+    ordering           = ['-timestamp']
+
+    def get_queryset(self):
+        # Non-ADMIN callers receive an empty queryset rather than a 403,
+        # so the router URL resolves but returns [] with HTTP 200.
+        if getattr(self.request.user, 'role', None) != 'ADMIN':
+            return AuditLog.objects.none()
+        return AuditLog.objects.select_related('actor').all()

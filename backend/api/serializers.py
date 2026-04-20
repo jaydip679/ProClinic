@@ -74,3 +74,25 @@ class PublicPublicationSerializer(serializers.ModelSerializer):
             'doctor_name', 'pdf_file',
             'approved_at', 'status_label',
         ]
+
+
+# ── Audit Serializer ──────────────────────────────────────────────────────────
+
+from audit.models import AuditLog  # noqa: E402 — avoids circular import at top
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Read-only serializer for AuditLog. ADMIN-only via AuditLogViewSet."""
+    actor_username = serializers.CharField(source='actor.username', read_only=True)
+    actor_email    = serializers.EmailField(source='actor.email',    read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id',
+            'actor', 'actor_username', 'actor_email',
+            'action_type',
+            'entity_type', 'entity_id',
+            'changes',
+            'timestamp',
+        ]
