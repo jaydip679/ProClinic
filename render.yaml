@@ -47,11 +47,9 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.3"
 
-      # ── Database (auto-injected from the postgres block below) ───────────────
+      # ── Database — external PostgreSQL URL from Render dashboard ─────────────
       - key: DATABASE_URL
-        fromDatabase:
-          name: proclinic-db
-          property: connectionString
+        value: "postgresql://proclinic_user:hdOrr5sr9zFqxkWBN9g4qPmLVuqMssLK@dpg-d7jluqhf9bms73fusujg-a.oregon-postgres.render.com:5432/proclinic"
 
       # ── Security headers ─────────────────────────────────────────────────────
       - key: SECURE_SSL_REDIRECT
@@ -86,5 +84,5 @@ databases:
   - name: proclinic-db
     databaseName: proclinic
     user: proclinic_user
-    region: singapore          # must match web service region to avoid cross-region DNS errors
+    region: oregon             # DB is hosted in oregon (matches external URL hostname)
     plan: free                 # free tier: 1 GB storage, expires after 90 days
