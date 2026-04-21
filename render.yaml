@@ -47,9 +47,13 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.3"
 
-      # ── Database — external PostgreSQL URL from Render dashboard ─────────────
+      # ── Database ─────────────────────────────────────────────────────────────
+      # DATABASE_URL is intentionally NOT stored in this file.
+      # Set it manually in: Render Dashboard → proclinic service → Environment → DATABASE_URL
+      # Format: postgresql://USER:PASSWORD@HOST:5432/DBNAME
+      # Get the value from: Render Dashboard → proclinic-db → Connections → External Database URL
       - key: DATABASE_URL
-        value: "postgresql://proclinic_user:hdOrr5sr9zFqxkWBN9g4qPmLVuqMssLK@dpg-d7jluqhf9bms73fusujg-a.oregon-postgres.render.com:5432/proclinic"
+        sync: false
 
       # ── Security headers ─────────────────────────────────────────────────────
       - key: SECURE_SSL_REDIRECT
