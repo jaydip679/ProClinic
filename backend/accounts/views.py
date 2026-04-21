@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
+import logging
 
 from .forms import (
     StaffProfileForm,
@@ -15,6 +16,8 @@ from .forms import (
 )
 from patients.models import Patient
 from audit.models import AuditLog
+
+logger = logging.getLogger(__name__)
 
 
 STAFF_ROLES = {'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'}
@@ -71,25 +74,32 @@ def patient_signup(request):
     if request.method == 'POST':
         form = PatientSignUpForm(request.POST)
         if form.is_valid():
-            with transaction.atomic():
-                user = form.save(commit=False)
-                user.role = 'PATIENT'
-                user.phone_number = form.cleaned_data.get('phone_number')
-                user.save()
-                Patient.objects.create(
-                    user=user,
-                    first_name=form.cleaned_data['first_name'],
-                    last_name=form.cleaned_data['last_name'],
-                    date_of_birth=form.cleaned_data['date_of_birth'],
-                    gender=form.cleaned_data['gender'],
-                    blood_group=form.cleaned_data['blood_group'],
-                    contact_number=form.cleaned_data['phone_number'],
-                    email=form.cleaned_data['email'],
-                    address=form.cleaned_data['address'],
-                    allergies=form.cleaned_data.get('allergies', ''),
+            try:
+                with transaction.atomic():
+                    user = form.save(commit=False)
+                    user.role = 'PATIENT'
+                    user.phone_number = form.cleaned_data.get('phone_number')
+                    user.save()
+                    Patient.objects.create(
+                        user=user,
+                        first_name=form.cleaned_data['first_name'],
+                        last_name=form.cleaned_data['last_name'],
+                        date_of_birth=form.cleaned_data['date_of_birth'],
+                        gender=form.cleaned_data['gender'],
+                        blood_group=form.cleaned_data['blood_group'],
+                        contact_number=form.cleaned_data['phone_number'],
+                        email=form.cleaned_data['email'],
+                        address=form.cleaned_data['address'],
+                        allergies=form.cleaned_data.get('allergies', ''),
+                    )
+                login(request, user)
+                return redirect('dashboard')
+            except Exception as exc:
+                logger.exception('patient_signup: unexpected error during account creation')
+                messages.error(
+                    request,
+                    'An unexpected error occurred while creating your account. Please try again.'
                 )
-            login(request, user)
-            return redirect('dashboard')
     else:
         form = PatientSignUpForm()
 
