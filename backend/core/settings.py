@@ -6,6 +6,12 @@ from pathlib import Path
 env = environ.Env(
     DEBUG=(bool, False),
     DATABASE_URL=(str, None),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
+    SECURE_HSTS_SECONDS=(int, 0),
+    SECURE_HSTS_INCLUDE_SUBDOMAINS=(bool, False),
+    SECURE_HSTS_PRELOAD=(bool, False),
 )
 
 # 2. Build paths inside the project
@@ -48,6 +54,7 @@ INSTALLED_APPS = [
 # 6. Middleware configuration (Order matters for Auth/Admin)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',    # ← serves static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -108,10 +115,20 @@ USE_I18N = True
 USE_TZ = True
 
 # 11. Static files configuration (linked to frontend/static)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR.parent / 'frontend' / 'static', # Points to ProClinic/frontend/static
+    BASE_DIR.parent / 'frontend' / 'static',  # Points to ProClinic/frontend/static
 ]
+# Django 4.2+ / 6.x: use STORAGES dict instead of the removed STATICFILES_STORAGE setting.
+# WhiteNoise CompressedManifestStaticFilesStorage gzips + fingerprint-hashes every asset.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -172,6 +189,16 @@ GST_RATE = env('GST_RATE', default='0.18')
 # 17. CORS Config
 CORS_ALLOW_ALL_ORIGINS = True
 
-# 18. Deployment
+# 18. Static root (collectstatic writes here; WhiteNoise serves from here)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# 19. Production security settings
+# All values are injected by Render env vars; defaults are safe for local dev.
+CSRF_TRUSTED_ORIGINS           = env.list('CSRF_TRUSTED_ORIGINS',           default=[])
+SECURE_SSL_REDIRECT            = env.bool('SECURE_SSL_REDIRECT',            default=False)
+SESSION_COOKIE_SECURE          = env.bool('SESSION_COOKIE_SECURE',          default=False)
+CSRF_COOKIE_SECURE             = env.bool('CSRF_COOKIE_SECURE',             default=False)
+SECURE_HSTS_SECONDS            = env.int( 'SECURE_HSTS_SECONDS',            default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False)
+SECURE_HSTS_PRELOAD            = env.bool('SECURE_HSTS_PRELOAD',            default=False)
 

@@ -1,0 +1,72 @@
+
+# render.yaml — Render Blueprint
+# Render reads this file automatically when you connect the repo via "New → Blueprint".
+# It provisions both the web service and the PostgreSQL database in one click.
+
+services:
+  - type: web
+    name: proclinic
+    runtime: python
+    region: singapore          # closest region to India; alternatives: oregon, frankfurt
+
+    buildCommand: "./build.sh"
+    startCommand: >-
+      gunicorn --chdir backend core.wsgi:application
+      --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+    autoDeploy: true           # auto-redeploy on every push to main branch
+
+    envVars:
+      # ── Django core ──────────────────────────────────────────────────────────
+      - key: DEBUG
+        value: "False"
+
+      - key: SECRET_KEY
+        generateValue: true    # Render generates a cryptographically random value
+
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+
+      # ── Database (auto-injected from the postgres block below) ───────────────
+      - key: DATABASE_URL
+        fromDatabase:
+          name: proclinic-db
+          property: connectionString
+
+      # ── Security headers ─────────────────────────────────────────────────────
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://proclinic.onrender.com"   # update after first deploy with your real subdomain
+
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+
+      - key: SECURE_HSTS_INCLUDE_SUBDOMAINS
+        value: "True"
+
+      - key: SECURE_HSTS_PRELOAD
+        value: "True"
+
+      # ── Clinic config ────────────────────────────────────────────────────────
+      - key: CONSULTATION_FEE
+        value: "500.00"
+
+      - key: GST_RATE
+        value: "0.18"
+
+databases:
+  - name: proclinic-db
+    databaseName: proclinic
+    user: proclinic_user
+    plan: free                 # free tier: 1 GB storage, expires after 90 days

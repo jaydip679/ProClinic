@@ -43,6 +43,9 @@ COPY . /app/
 # ── Port ─────────────────────────────────────────────────────────────────────
 EXPOSE 8000
 
-# ── Default command ──────────────────────────────────────────────────────────
-# Change into the Django project directory before starting the server
-CMD ["python", "backend/manage.py", "runserver", "0.0.0.0:8000"]
+# ── Default command (production: Gunicorn) ───────────────────────────────────
+# --chdir backend  : makes 'backend/' the working directory so core.wsgi resolves
+# --workers 2      : safe for Render free-tier (512 MB RAM)
+# --timeout 120    : allows WeasyPrint PDF generation to complete without being killed
+CMD ["gunicorn", "--chdir", "backend", "core.wsgi:application", \
+     "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
