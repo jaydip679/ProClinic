@@ -51,7 +51,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: proclinic-db
-          property: internalConnectionString
+          property: connectionString
 
       # ── Security headers ─────────────────────────────────────────────────────
       - key: SECURE_SSL_REDIRECT
@@ -86,4 +86,5 @@ databases:
   - name: proclinic-db
     databaseName: proclinic
     user: proclinic_user
+    region: singapore          # must match web service region to avoid cross-region DNS errors
     plan: free                 # free tier: 1 GB storage, expires after 90 days
