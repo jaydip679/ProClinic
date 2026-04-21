@@ -10,6 +10,9 @@ services:
     region: singapore          # closest region to India; alternatives: oregon, frankfurt
 
     buildCommand: "./build.sh"
+    # preDeployCommand runs AFTER build, AFTER DB is reachable, BEFORE traffic switches.
+    # This is the correct Render pattern for running migrations safely.
+    preDeployCommand: "cd backend && python manage.py migrate"
     startCommand: >-
       gunicorn --chdir backend core.wsgi:application
       --bind 0.0.0.0:$PORT --workers 2 --timeout 120
