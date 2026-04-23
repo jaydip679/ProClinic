@@ -34,10 +34,10 @@ MedicineFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True,
     widgets={
-        'medicine_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Medicine'}),
-        'dosage': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 500mg'}),
-        'instructions': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 1-0-1'}),
-        'duration': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 5 days'}),
+        'medicine_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Medicine', 'maxlength': '150'}),
+        'dosage': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 500mg', 'maxlength': '50'}),
+        'instructions': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 1-0-1', 'maxlength': '100'}),
+        'duration': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 5 days', 'maxlength': '50'}),
     }
 )
 

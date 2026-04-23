@@ -68,6 +68,54 @@
             </form>
         </div>
     </div>
+    
+    <div class="pc-card" style="margin-top: 40px; box-shadow: var(--pc-shadow-soft); border-color: #e4eaf2; border-radius: 16px;">
+        <div class="pc-card-head" style="padding: 20px 24px; border-bottom-color: #f0f4f8;">
+            <strong style="color: #24323b; font-size: 16px; letter-spacing: -0.2px;">Manage Staff Accounts</strong>
+        </div>
+        <div class="pc-table-wrap">
+            <table class="pc-table">
+                <thead>
+                    <tr>
+                        <th style="padding-top: 16px; padding-bottom: 16px; padding-left: 24px;">Name / Username</th>
+                        <th style="padding-top: 16px; padding-bottom: 16px;">Role</th>
+                        <th style="padding-top: 16px; padding-bottom: 16px;">Status</th>
+                        <th style="padding-top: 16px; padding-bottom: 16px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff in staff_list %}
+                    <tr>
+                        <td style="font-weight: 600; color: #24323b; padding: 18px 24px;">
+                            {{ staff.get_full_name|default:staff.username }}<br>
+                            <small style="color: #6f8295; font-weight: normal;">{{ staff.email }}</small>
+                        </td>
+                        <td style="padding: 18px 14px;">{{ staff.get_role_display }}</td>
+                        <td style="padding: 18px 14px;">
+                            {% if staff.is_active %}
+                                <span class="pc-chip pc-chip--confirmed" style="padding: 6px 12px;">Active</span>
+                            {% else %}
+                                <span class="pc-chip pc-chip--danger" style="padding: 6px 12px;">Deactivated</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 18px 14px;">
+                            {% if staff.is_active %}
+                            <form method="post" action="{% url 'deactivate_staff' staff.pk %}" style="margin: 0;" onsubmit="return confirm('Deactivate {{ staff.username }}? This action preserves records but prevents future log in.');">
+                                {% csrf_token %}
+                                <button type="submit" class="pc-btn pc-btn--danger" style="padding: 6px 14px; min-height: 32px; font-size: 12px; border-radius: 6px;">Deactivate</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #8e9aab; padding: 60px 20px;">No staff accounts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <style>

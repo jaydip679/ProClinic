@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from patients.models import Patient
 from appointments.models import Appointment
 
@@ -40,6 +41,10 @@ class Invoice(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     pdf_file   = models.FileField(upload_to='invoices/pdfs/', null=True, blank=True)
 
+    def clean(self):
+        if any(v < 0 for v in [self.subtotal, self.tax_amount, self.discount_amount, self.grand_total, self.paid_amount, self.due_amount]):
+            raise ValidationError("Financial amounts cannot be negative.")
+
     def recalculate_totals(self):
         """Recompute subtotal and grand_total from current line items.
 
@@ -75,6 +80,10 @@ class InvoiceItem(models.Model):
     @property
     def line_total(self):
         return self.unit_cost * self.quantity
+
+    def clean(self):
+        if self.unit_cost < 0:
+            raise ValidationError("Unit cost cannot be negative.")
 
     def __str__(self):
         return f"[{self.get_item_type_display()}] {self.service_name} for Invoice {self.invoice.id}"

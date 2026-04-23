@@ -9,7 +9,7 @@ from django.conf import settings
 from accounts.models import CustomUser
 from audit.models import AuditLog
 from billing.models import Invoice
-from patients.models import Patient
+from patients.models import Patient, Visit
 from appointments.models import Appointment
 from publications.models import Publication
 from prescriptions.models import Prescription, PrescriptionItem
@@ -76,9 +76,13 @@ def dashboard(request):
                 status='SCHEDULED',
                 scheduled_time__gte=now,
             ).select_related('patient').order_by('scheduled_time')[:8],
-            'my_patient_count': Patient.objects.filter(appointments__doctor=user).distinct().count(),
+            'my_patient_count': Patient.objects.filter(
+                appointments__doctor=user,
+                appointments__status__in=['SCHEDULED', 'RESCHEDULED', 'COMPLETED', 'CHECKED_IN']
+            ).distinct().count(),
             'my_prescription_count': Prescription.objects.filter(doctor=user).count(),
             'my_pending_research': Publication.objects.filter(doctor=user, status='PENDING').count(),
+            'ehr_records_count': Visit.objects.filter(doctor=user).count(),
             'my_recent_visits': Appointment.objects.filter(
                 doctor=user
             ).select_related('patient').order_by('-scheduled_time')[:6],

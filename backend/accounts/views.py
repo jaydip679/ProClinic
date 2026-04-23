@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
+from django.views.decorators.http import require_POST
 import logging
 
 from .forms import (
@@ -16,6 +17,7 @@ from .forms import (
 )
 from patients.models import Patient
 from audit.models import AuditLog
+from .models import CustomUser
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +125,44 @@ def create_staff_account(request):
     else:
         form = StaffCreationForm()
 
-    return render(request, 'accounts/create_staff_account.html', {'form': form})
+    staff_list = CustomUser.objects.exclude(role='PATIENT').order_by('-is_active', '-date_joined')
+    return render(request, 'accounts/create_staff_account.html', {'form': form, 'staff_list': staff_list})
+
+@require_POST
+@login_required
+def deactivate_staff_account(request, pk):
+    if request.user.role != 'ADMIN':
+        return redirect('dashboard')
+
+    target_user = get_object_or_404(CustomUser, pk=pk)
+
+    if target_user.role == 'PATIENT':
+        messages.error(request, "Cannot deactivate patient accounts from this portal.")
+        return redirect('create_staff_account')
+
+    if target_user == request.user:
+        messages.error(request, "Safety block: You cannot deactivate your own account.")
+        return redirect('create_staff_account')
+
+    if target_user.role == 'ADMIN' and target_user.is_active:
+        active_admins = CustomUser.objects.filter(role='ADMIN', is_active=True).count()
+        if active_admins <= 1:
+            messages.error(request, "Safety block: Cannot deactivate the last active administrator account.")
+            return redirect('create_staff_account')
+
+    target_user.is_active = False
+    target_user.save(update_fields=['is_active'])
+    
+    AuditLog.objects.create(
+        actor=request.user,
+        action_type='UPDATE',
+        entity_type='CustomUser',
+        entity_id=target_user.pk,
+        changes={'action': 'deactivated account', 'target': target_user.username},
+    )
+    
+    messages.success(request, f"Staff account {target_user.username} deactivated successfully.")
+    return redirect('create_staff_account')
 
 
 @login_required

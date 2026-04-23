@@ -107,6 +107,10 @@ def doctor_appointment_detail(request, appointment_id):
 
 
     if request.method == 'POST':
+        if appointment.status in ['CANCELLED', 'NOSHOW']:
+            messages.error(request, "Cannot write prescriptions for cancelled or no-show appointments.")
+            return redirect('doctor_appointment_detail', appointment_id=appointment.id)
+
         if prescription:
             messages.info(request, "Prescription already exists for this appointment.")
             return redirect('doctor_appointment_detail', appointment_id=appointment.id)
@@ -226,6 +230,10 @@ def get_available_slots(request):
         if query_date < now_local.date():
             return JsonResponse({'slots': [], 'error': 'Selected date is in the past. Clean your calendar fields.'})
             
+        max_future_date = (now_local + datetime.timedelta(days=7)).date()
+        if query_date > max_future_date:
+            return JsonResponse({'slots': [], 'error': 'Cannot book more than 7 days in advance.'})
+
         doctor = CustomUser.objects.get(pk=doctor_id, role='DOCTOR')
     except (ValueError, CustomUser.DoesNotExist):
         return JsonResponse({'slots': []})

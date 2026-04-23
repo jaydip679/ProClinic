@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
+from datetime import timedelta
 
 from accounts.models import CustomUser
 from .models import Appointment, DoctorUnavailability
@@ -80,6 +81,12 @@ class AppointmentForm(forms.ModelForm):
             # 1. Prevent past bookings
             if scheduled_time < timezone.now():
                 self.add_error('scheduled_time', 'You cannot book appointments in the past.')
+
+            # 1.b Prevent booking > 7 days in advance
+            max_future = timezone.now() + timedelta(days=7)
+            if scheduled_time > max_future:
+                self.add_error('scheduled_time', 'Appointments cannot be booked more than 7 days in advance.')
+
 
         if doctor and scheduled_time:
             if not should_override:

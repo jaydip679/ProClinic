@@ -1,13 +1,19 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
+from django.core.validators import RegexValidator, EmailValidator
+from django.core.exceptions import ValidationError
 
 from .models import CustomUser
 from patients.models import Patient
 
 
 class PatientSignUpForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    phone_number = forms.CharField(required=True, max_length=15)
+    email = forms.EmailField(required=True, validators=[EmailValidator(message="Enter a valid email address.")])
+    phone_number = forms.CharField(
+        required=True, 
+        max_length=10, 
+        validators=[RegexValidator(regex=r'^\d{10}$', message='Phone number must be exactly 10 digits.')]
+    )
     date_of_birth = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'})
     )
@@ -42,7 +48,12 @@ class StaffCreationForm(UserCreationForm):
             choice for choice in CustomUser.ROLE_CHOICES if choice[0] != 'PATIENT'
         ]
     )
-    email = forms.EmailField(required=True)
+    email = forms.EmailField(required=True, validators=[EmailValidator(message="Enter a valid email address.")])
+    phone_number = forms.CharField(
+        required=True, 
+        max_length=10, 
+        validators=[RegexValidator(regex=r'^\d{10}$', message='Phone number must be exactly 10 digits.')]
+    )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
@@ -60,6 +71,13 @@ class StaffCreationForm(UserCreationForm):
 
 
 class PatientProfileForm(forms.ModelForm):
+    contact_number = forms.CharField(
+        required=True, 
+        max_length=10, 
+        validators=[RegexValidator(regex=r'^\d{10}$', message='Phone number must be exactly 10 digits.')]
+    )
+    email = forms.EmailField(required=True, validators=[EmailValidator(message="Enter a valid email address.")])
+    
     class Meta:
         model = Patient
         fields = [
@@ -80,11 +98,30 @@ class PatientProfileForm(forms.ModelForm):
         }
 
 
-class PatientPasswordChangeForm(PasswordChangeForm):
+class CustomPasswordChangeForm(PasswordChangeForm):
+    def clean_new_password1(self):
+        old_password = self.cleaned_data.get('old_password')
+        new_password = self.cleaned_data.get('new_password1')
+        if old_password and new_password:
+            if old_password == new_password:
+                raise forms.ValidationError("Your new password cannot be the same as your old password.")
+        return new_password
+
+class PatientPasswordChangeForm(CustomPasswordChangeForm):
+    pass
+
+class StaffPasswordChangeForm(CustomPasswordChangeForm):
     pass
 
 
 class StaffProfileForm(forms.ModelForm):
+    phone_number = forms.CharField(
+        required=True, 
+        max_length=10, 
+        validators=[RegexValidator(regex=r'^\d{10}$', message='Phone number must be exactly 10 digits.')]
+    )
+    email = forms.EmailField(required=True, validators=[EmailValidator(message="Enter a valid email address.")])
+    
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'email', 'phone_number', 'specialization']

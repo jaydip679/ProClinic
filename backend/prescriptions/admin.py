@@ -14,3 +14,9 @@ class PrescriptionAdmin(admin.ModelAdmin):
     inlines = [PrescriptionItemInline]
     search_fields = ('patient__first_name', 'patient__last_name', 'doctor__last_name')
     raw_id_fields = ('visit', 'appointment')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

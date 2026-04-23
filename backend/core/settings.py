@@ -195,6 +195,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # 19. Production security settings
 # All values are injected by Render env vars; defaults are safe for local dev.
 CSRF_TRUSTED_ORIGINS           = env.list('CSRF_TRUSTED_ORIGINS',           default=[])
+if not any('onrender.com' in origin for origin in CSRF_TRUSTED_ORIGINS):
+    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT            = env.bool('SECURE_SSL_REDIRECT',            default=False)
 SESSION_COOKIE_SECURE          = env.bool('SESSION_COOKIE_SECURE',          default=False)
 CSRF_COOKIE_SECURE             = env.bool('CSRF_COOKIE_SECURE',             default=False)

@@ -18,6 +18,12 @@ class VisitAdmin(admin.ModelAdmin):
     list_filter = ('visit_date',)
     date_hierarchy = 'visit_date'
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
 
 def _action_mark_verified(modeladmin, request, queryset):
     for report in queryset.select_related():
@@ -47,6 +53,12 @@ class LabReportAdmin(admin.ModelAdmin):
     date_hierarchy = 'report_date'
     readonly_fields = ('uploaded_at', 'updated_at', 'verified_by')
     actions = [_action_mark_verified, _action_mark_archived]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
     @admin.display(description='Status')
     def status_badge(self, obj):
