@@ -20,12 +20,7 @@ services:
     autoDeploy: true           # auto-redeploy on every push to main branch
     plan: free                 # 512 MB RAM, 0.1 CPU, spins down after 15 min inactivity
 
-    # Persistent disk — media uploads survive re-deploys and container restarts.
-    # Django writes to /var/data/media; IS_RENDER env var tells settings.py to use it.
-    disk:
-      name: proclinic-media
-      mountPath: /var/data
-      sizeGB: 1
+    # Persistent disk removed (Render free tier does not support disks).
 
 
     envVars:
