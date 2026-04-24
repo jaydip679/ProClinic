@@ -45,5 +45,7 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
 ]
 
-if settings.DEBUG:
+# Serve uploaded media files locally (not on Render — the persistent disk
+# is served directly through the /media/ path by the web server there).
+if not settings.IS_RENDER:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

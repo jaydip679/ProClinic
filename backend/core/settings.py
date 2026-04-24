@@ -136,8 +136,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Media files (Uploaded PDFs, images, etc.)
+# On Render, use the mounted persistent disk so uploads survive re-deploys.
+# Locally, store media inside the project tree for easy access.
+IS_RENDER = os.environ.get('RENDER', '') == 'true'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, '../frontend/media')
+if IS_RENDER:
+    MEDIA_ROOT = '/var/data/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # 12. Password Hashing (Argon2 as per PRD)
 PASSWORD_HASHERS = [
