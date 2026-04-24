@@ -17,3 +17,5 @@ sqlparse==0.5.5
 django-cors-headers==4.9.0
 Pillow==12.2.0
 pydyf==0.12.1
+cloudinary==1.44.0
+django-cloudinary-storage==0.3.0

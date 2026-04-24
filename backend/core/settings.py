@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'corsheaders',
+    'cloudinary',
+    'cloudinary_storage',
 
     # Project apps
     'api',
@@ -121,9 +123,19 @@ STATICFILES_DIRS = [
 ]
 # Django 4.2+ / 6.x: use STORAGES dict instead of the removed STATICFILES_STORAGE setting.
 # WhiteNoise CompressedManifestStaticFilesStorage gzips + fingerprint-hashes every asset.
+# Default file storage: Cloudinary when credentials are present, local filesystem otherwise.
+_CLOUDINARY_CONFIGURED = bool(
+    os.environ.get('CLOUDINARY_CLOUD_NAME') and
+    os.environ.get('CLOUDINARY_API_KEY') and
+    os.environ.get('CLOUDINARY_API_SECRET')
+)
 STORAGES = {
     'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'BACKEND': (
+            'cloudinary_storage.storage.MediaCloudinaryStorage'
+            if _CLOUDINARY_CONFIGURED
+            else 'django.core.files.storage.FileSystemStorage'
+        ),
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
@@ -136,27 +148,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Media files (Uploaded PDFs, images, etc.)
-# On Render, use the mounted persistent disk so uploads survive re-deploys.
-# Locally, store media inside the project tree for easy access.
+# On Render free tier (no persistent disk), media is stored in Cloudinary.
+# Locally, files are stored inside the project tree when Cloudinary creds are absent.
 IS_RENDER = os.environ.get('RENDER', '') == 'true'
-MEDIA_URL = '/media/'
-if IS_RENDER:
-    MEDIA_ROOT = '/var/data/media'
-else:
-    MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'  # Still used by templates / local dev; Cloudinary ignores it for URLs.
 
-# Safeguard: Auto-create media directories if missing and handle missing disk path gracefully
+# Cloudinary configuration — injected via environment variables.
+# If any var is missing the STORAGES 'default' backend falls back to FileSystemStorage.
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY':    os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
+
+# Local MEDIA_ROOT: only used when Cloudinary is NOT configured.
+MEDIA_ROOT = BASE_DIR / 'media'
 try:
-    if isinstance(MEDIA_ROOT, Path):
-        MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-    else:
-        os.makedirs(MEDIA_ROOT, exist_ok=True)
-except Exception as e:
-    import logging
-    logging.getLogger('django').warning(f"Failed to create MEDIA_ROOT: {e}. Falling back to temporary directory.")
-    import tempfile
-    MEDIA_ROOT = os.path.join(tempfile.gettempdir(), 'proclinic_media_fallback')
-    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass  # Non-fatal; Cloudinary storage does not use MEDIA_ROOT.
 
 # 12. Password Hashing (Argon2 as per PRD)
 PASSWORD_HASHERS = [

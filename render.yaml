@@ -28,7 +28,7 @@ services:
       - key: DEBUG
         value: "False"
 
-      # Tells settings.py to use /var/data/media as MEDIA_ROOT (persistent disk)
+      # Tells settings.py we are running on Render (used for IS_RENDER flag)
       - key: RENDER
         value: "true"
 
@@ -59,6 +59,17 @@ services:
       # Format: postgresql://USER:PASSWORD@HOST:5432/DBNAME
       # Get the value from: Render Dashboard → proclinic-db → Connections → External Database URL
       - key: DATABASE_URL
+        sync: false
+
+      # ── Cloudinary (media uploads: PDFs, images, lab reports) ────────────────
+      # Copy values from: Cloudinary Dashboard → Settings → Access Keys
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+
+      - key: CLOUDINARY_API_KEY
+        sync: false
+
+      - key: CLOUDINARY_API_SECRET
         sync: false
 
       # ── Security headers ─────────────────────────────────────────────────────
