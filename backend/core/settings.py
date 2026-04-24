@@ -145,6 +145,19 @@ if IS_RENDER:
 else:
     MEDIA_ROOT = BASE_DIR / 'media'
 
+# Safeguard: Auto-create media directories if missing and handle missing disk path gracefully
+try:
+    if isinstance(MEDIA_ROOT, Path):
+        MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+    else:
+        os.makedirs(MEDIA_ROOT, exist_ok=True)
+except Exception as e:
+    import logging
+    logging.getLogger('django').warning(f"Failed to create MEDIA_ROOT: {e}. Falling back to temporary directory.")
+    import tempfile
+    MEDIA_ROOT = os.path.join(tempfile.gettempdir(), 'proclinic_media_fallback')
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+
 # 12. Password Hashing (Argon2 as per PRD)
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
